@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { LogOut, Upload, FileText, Users, ChevronRight, User, Activity, FilePlus, Clock, LayoutDashboard } from 'lucide-react';
-import DocumentViewerModal from '../components/DocumentViewerModal';
+import DocumentViewerModal from '../../components/DocumentViewerModal';
 
 interface Patient {
   id: string;

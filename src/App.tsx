@@ -1,10 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import PatientDashboard from './pages/PatientDashboard';
-import DoctorDashboard from './pages/DoctorDashboard';
-
-import Home from './pages/Home';
-import DoctorLanding from './pages/DoctorLanding';
+import Login from './modules/shared/Login';
+import PatientDashboard from './modules/patient/PatientDashboard';
+import DoctorDashboard from './modules/doctor/DoctorDashboard';
+import Home from './modules/patient/Home';
+import DoctorLanding from './modules/doctor/DoctorLanding';
 
 function App() {
   return (

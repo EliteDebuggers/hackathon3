@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { LogOut, Upload, FileText, Activity, Stethoscope, Clock, FilePlus } from 'lucide-react';
-import DocumentViewerModal from '../components/DocumentViewerModal';
+import DocumentViewerModal from '../../components/DocumentViewerModal';
 
 interface Document {
   id: string;
