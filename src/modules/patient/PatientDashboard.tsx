@@ -11,6 +11,7 @@ import SharedLayout from '../../components/SharedLayout';
 import { useLayoutContext } from '../../components/LayoutContext';
 import { getLocalMedications, getLocalDietPlan } from '../../lib/medications';
 import type { DietPlan, Medication } from '../../lib/medications';
+import { getLocalDocuments, saveLocalDocument } from '../../lib/documents';
 
 interface Document {
   id: string;
@@ -19,7 +20,11 @@ interface Document {
   document_type: string;
   created_at: string;
   uploader_id: string;
+  patient_id?: string;
+  doctor_id?: string | null;
+  category?: string;
 }
+
 
 export default function PatientDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -82,28 +87,41 @@ export default function PatientDashboard() {
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/');
-      return;
-    }
-    setUserId(user.id);
-    setMedications(getLocalMedications(user.id));
-    setDietPlan(getLocalDietPlan(user.id));
+    const pid = user ? user.id : 'guest-patient';
+    setUserId(pid);
+    setMedications(getLocalMedications(pid));
+    setDietPlan(getLocalDietPlan(pid));
   };
 
   const fetchDocuments = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const pid = user ? user.id : 'guest-patient';
 
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('patient_id', user.id)
-      .order('created_at', { ascending: false });
+    let dbDocs: Document[] = [];
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('patient_id', pid)
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setDocuments(data);
+      if (!error && data) dbDocs = data as Document[];
+    } catch (err) {
+      console.error(err);
     }
+
+    const localDocs = getLocalDocuments(pid) as Document[];
+    const docMap = new Map<string, Document>();
+    dbDocs.forEach(d => docMap.set(d.id, d));
+    localDocs.forEach(d => {
+      if (!docMap.has(d.id)) docMap.set(d.id, d);
+    });
+
+    const merged = Array.from(docMap.values()).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    setDocuments(merged);
     setLoading(false);
   };
 
@@ -117,33 +135,61 @@ export default function PatientDashboard() {
     const filePath = `${userId}/${fileName}`;
 
     try {
-      const { error: uploadError } = await supabase.storage
-        .from('medical-records')
-        .upload(filePath, file);
+      let publicUrl = '';
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('medical-records')
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('medical-records')
-        .getPublicUrl(filePath);
+        const { data: urlData } = supabase.storage
+          .from('medical-records')
+          .getPublicUrl(filePath);
+        publicUrl = urlData.publicUrl;
+      } catch (storageErr) {
+        console.warn('Storage fallback activated:', storageErr);
+        publicUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
 
-      const { error: dbError } = await supabase
+      const newDoc: Partial<Document> = {
+        patient_id: userId,
+        uploader_id: userId,
+        title: file.name,
+        file_url: publicUrl,
+        document_type: uploadCategory,
+      };
+
+      const { data: insertedData, error: dbError } = await supabase
         .from('documents')
-        .insert([
-          {
-            patient_id: userId,
-            uploader_id: userId,
-            title: file.name,
-            file_url: publicUrl,
-            document_type: uploadCategory,
-          }
-        ]);
+        .insert([newDoc])
+        .select()
+        .single();
 
-      if (dbError) throw dbError;
+      const docToSave: Document = {
+        id: insertedData?.id || `doc-${Date.now()}`,
+        patient_id: userId,
+        uploader_id: userId,
+        title: file.name,
+        category: uploadCategory,
+        document_type: uploadCategory,
+        file_url: publicUrl,
+        created_at: insertedData?.created_at || new Date().toISOString()
+      };
 
-      fetchDocuments();
+      saveLocalDocument(userId, docToSave);
+
+      if (dbError) {
+        setDocuments(prev => [docToSave, ...prev.filter(d => d.id !== docToSave.id)]);
+      } else {
+        fetchDocuments();
+      }
     } catch (error: any) {
-      alert('Error uploading file: ' + error.message);
+      console.error(error);
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -227,7 +273,6 @@ export default function PatientDashboard() {
 
         <div className={`flex-1 flex flex-col gap-3 w-full transition-all duration-300 ease-in-out p-2.5 md:p-4 ${isChatbotOpen ? 'lg:pr-3 mb-3 lg:mb-0' : ''}`}>
 
-          {/* Metric Bar - Compact Dense Layout */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div className="bg-white rounded-xl p-3.5 flex items-center border border-gray-200/80 shadow-sm hover:shadow-md transition">
               <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg mr-3">

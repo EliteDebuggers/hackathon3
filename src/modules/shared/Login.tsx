@@ -34,7 +34,7 @@ export default function Login() {
             .eq('id', userData.user.id)
             .single();
 
-          if (profile?.role === 'doctor') navigate('/doctor-dashboard');
+          if (profile?.role === 'doctor') navigate('/doctor-patients');
           else navigate('/patient-dashboard');
         }
       } else {
@@ -51,7 +51,7 @@ export default function Login() {
 
           if (profileError) throw profileError;
 
-          if (role === 'doctor') navigate('/doctor-dashboard');
+          if (role === 'doctor') navigate('/doctor-patients');
           else navigate('/patient-dashboard');
         }
       }

@@ -45,15 +45,28 @@ export default function HealthTimeline({ patientId }: { patientId: string }) {
  setLoading(false);
  };
 
+ const markAsRead = async (id: string) => {
+   await supabase.from('health_milestones').update({ status: 'read' }).eq('id', id);
+   setMilestones(prev => prev.map(m => m.id === id ? { ...m, status: 'read' } : m));
+ };
+
+ const dismissMilestone = async (id: string) => {
+   await supabase.from('health_milestones').delete().eq('id', id);
+   setMilestones(prev => prev.filter(m => m.id !== id));
+ };
+
  const getIcon = (type: string, status: string) => {
- if (status === 'completed') return <Icon icon="solar:check-circle-linear" className="w-6 h-6 text-green-500 bg-white" />;
+ if (status === 'completed' || status === 'read') return <Icon icon="solar:check-circle-linear" className="w-6 h-6 text-green-500 bg-white" />;
  switch (type) {
  case 'appointment_booked': return <Icon icon="solar:calendar-linear" className="w-6 h-6 text-blue-500 bg-white" />;
  case 'action_required': return <Icon icon="solar:clock-circle-linear" className="w-6 h-6 text-orange-500 bg-white" />;
- case 'doctor_note': return <Icon icon="solar:file-text-linear" className="w-6 h-6 text-purple-500 bg-white" />;
+ case 'doctor_note': return <Icon icon="solar:letter-linear" className="w-6 h-6 text-purple-500 bg-white" />;
  default: return <Icon icon="solar:pulse-linear" className="w-6 h-6 text-gray-400 bg-white" />;
  }
  };
+
+ // Filter out read/dismissed milestones from the visible list, but still show completed ones
+ const visibleMilestones = milestones;
 
  return (
  <div className="bg-white rounded-md border p-6">
@@ -75,22 +88,43 @@ export default function HealthTimeline({ patientId }: { patientId: string }) {
  </div>
  </div>
  </div>
- ) : milestones.length === 0 ? (
+ ) : visibleMilestones.length === 0 ? (
  <p className="text-gray-500 text-center py-8">Your health timeline will appear here as you book appointments and upload records.</p>
  ) : (
  <div className="relative border-l-2 border-gray-200 ml-4 space-y-8">
- {milestones.map((m) => (
- <div key={m.id} className="relative pl-8">
+ {visibleMilestones.map((m) => (
+ <div key={m.id} className={`relative pl-8 group ${m.status === 'read' ? 'opacity-60' : ''}`}>
  <div className="absolute -left-3.5 top-0 ring-4 ring-white">
  {getIcon(m.milestone_type, m.status)}
  </div>
  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
- <h3 className={`text-lg font-semibold ${m.status === 'pending' ? 'text-orange-600' : 'text-gray-900'}`}>
+ <h3 className={`text-lg font-semibold ${m.status === 'pending' ? 'text-orange-600' : m.status === 'read' ? 'text-gray-500' : 'text-gray-900'}`}>
  {m.title}
  </h3>
- <time className="text-sm text-gray-500">
- {new Date(m.created_at).toLocaleString()}
- </time>
+ <div className="flex items-center gap-2">
+  <time className="text-sm text-gray-500">
+  {new Date(m.created_at).toLocaleString()}
+  </time>
+  {/* Dismiss / Mark buttons */}
+  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+    {m.status !== 'read' && m.status !== 'completed' && (
+      <button
+        onClick={() => markAsRead(m.id)}
+        className="p-1 hover:bg-green-50 rounded-md text-gray-400 hover:text-green-600 transition"
+        title="Mark as done"
+      >
+        <Icon icon="solar:check-circle-bold" className="w-4 h-4" />
+      </button>
+    )}
+    <button
+      onClick={() => dismissMilestone(m.id)}
+      className="p-1 hover:bg-red-50 rounded-md text-gray-400 hover:text-red-500 transition"
+      title="Dismiss"
+    >
+      <Icon icon="solar:close-circle-linear" className="w-4 h-4" />
+    </button>
+  </div>
+ </div>
  </div>
  {m.description && (
  <p className="text-gray-600 mt-1 whitespace-pre-wrap">{m.description}</p>

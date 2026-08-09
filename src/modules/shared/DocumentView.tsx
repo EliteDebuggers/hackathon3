@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Icon } from '@iconify/react';
+import { getLocalDocumentById } from '../../lib/documents';
 
 export default function DocumentView() {
  const { id } = useParams<{ id: string }>();
@@ -12,15 +13,29 @@ export default function DocumentView() {
  useEffect(() => {
  async function fetchDoc() {
  if (!id) return;
+
+ try {
  const { data, error } = await supabase
- .from('medical_documents')
+ .from('documents')
  .select('*')
  .eq('id', id)
  .single();
- 
+
  if (!error && data) {
  setDocument(data);
+ setLoading(false);
+ return;
  }
+ } catch (err) {
+ console.warn('Supabase fetch document error:', err);
+ }
+
+ // Check local storage fallback
+ const localDoc = getLocalDocumentById(id);
+ if (localDoc) {
+ setDocument(localDoc);
+ }
+
  setLoading(false);
  }
  fetchDoc();
@@ -45,45 +60,61 @@ export default function DocumentView() {
  );
  }
 
- const getFileType = (url: string) => {
- const urlWithoutQuery = url.split('?')[0];
- const extension = urlWithoutQuery.split('.').pop()?.toLowerCase();
- if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(extension || '')) return 'image';
- if (extension === 'pdf') return 'pdf';
- return 'office';
- };
+  const getFileType = (url: string, title?: string, docType?: string) => {
+    if (!url) return 'image';
 
- const renderContent = () => {
- const type = getFileType(document.file_url);
- if (type === 'image') {
- return (
- <div className="flex items-center justify-center w-full h-full bg-gray-100 rounded-md">
- <img 
- src={document.file_url} 
- alt={document.title} 
- className="max-w-full max-h-full object-contain rounded-md"
- />
- </div>
- );
- }
- if (type === 'pdf') {
- return (
- <iframe 
- src={document.file_url} 
- className="w-full h-full rounded-md border-0 bg-white" 
- title={document.title} 
- />
- );
- }
- const officeUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=true`;
- return (
- <iframe 
- src={officeUrl} 
- className="w-full h-full rounded-md border-0 bg-white" 
- title={document.title} 
- />
- );
- };
+    // 1. Explicit base64 data URLs
+    if (url.startsWith('data:image/')) return 'image';
+    if (url.startsWith('data:application/pdf')) return 'pdf';
+
+    // 2. Extensions from title or filename
+    const nameToCheck = (title || url.split('?')[0] || '').toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp', 'svg'].some(ext => nameToCheck.endsWith('.' + ext))) {
+      return 'image';
+    }
+    if (nameToCheck.endsWith('.pdf') || docType?.toLowerCase() === 'pdf' || docType === 'SCAN' || docType === 'REPORT') {
+      return nameToCheck.endsWith('.pdf') ? 'pdf' : 'image';
+    }
+
+    // 3. Fallback for data URLs / blob URLs
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+      return 'image';
+    }
+
+    return 'office';
+  };
+
+  const renderContent = () => {
+    const type = getFileType(document.file_url, document.title, document.document_type);
+    if (type === 'image') {
+      return (
+        <div className="flex items-center justify-center w-full h-full bg-gray-100 rounded-md p-2">
+          <img 
+            src={document.file_url} 
+            alt={document.title} 
+            className="max-w-full max-h-full object-contain rounded-md shadow-sm"
+          />
+        </div>
+      );
+    }
+    if (type === 'pdf') {
+      return (
+        <iframe 
+          src={document.file_url} 
+          className="w-full h-full rounded-md border-0 bg-white" 
+          title={document.title} 
+        />
+      );
+    }
+    const officeUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(document.file_url)}&embedded=true`;
+    return (
+      <iframe 
+        src={officeUrl} 
+        className="w-full h-full rounded-md border-0 bg-white" 
+        title={document.title} 
+      />
+    );
+  };
 
  return (
  <div className="h-screen flex flex-col bg-gray-100">

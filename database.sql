@@ -28,12 +28,13 @@ CREATE POLICY "Users can insert their own profile." ON public.users FOR INSERT W
 -- ========== DOCUMENTS ==========
 CREATE TABLE IF NOT EXISTS public.documents (
   id uuid default gen_random_uuid() primary key,
-  patient_id uuid references public.users(id) not null,
-  doctor_id uuid references public.users(id),
-  uploader_id uuid references public.users(id) not null,
+  patient_id text not null,
+  doctor_id text,
+  uploader_id text not null,
   title text not null,
   file_url text not null,
   document_type text not null,
+  category text,
   extracted_text text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -44,22 +45,27 @@ DROP POLICY IF EXISTS "Patients can view own documents" ON public.documents;
 DROP POLICY IF EXISTS "Doctors can view relevant documents" ON public.documents;
 DROP POLICY IF EXISTS "Users can insert documents" ON public.documents;
 DROP POLICY IF EXISTS "Users can delete own documents" ON public.documents;
+DROP POLICY IF EXISTS "Anyone can select documents" ON public.documents;
+DROP POLICY IF EXISTS "Anyone can insert documents" ON public.documents;
+DROP POLICY IF EXISTS "Anyone can delete documents" ON public.documents;
 
-CREATE POLICY "Patients can view own documents" ON public.documents FOR SELECT USING (auth.uid() = patient_id);
-CREATE POLICY "Doctors can view relevant documents" ON public.documents FOR SELECT USING (auth.uid() = doctor_id or auth.uid() = uploader_id);
-CREATE POLICY "Users can insert documents" ON public.documents FOR INSERT WITH CHECK (auth.uid() = uploader_id);
-CREATE POLICY "Users can delete own documents" ON public.documents FOR DELETE USING (auth.uid() = uploader_id);
+CREATE POLICY "Anyone can select documents" ON public.documents FOR SELECT USING (true);
+CREATE POLICY "Anyone can insert documents" ON public.documents FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can delete documents" ON public.documents FOR DELETE USING (true);
 
 -- ========== STORAGE ==========
 INSERT INTO storage.buckets (id, name, public) VALUES ('medical-records', 'medical-records', true) ON CONFLICT DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('documents', 'documents', true) ON CONFLICT DO NOTHING;
 
 DROP POLICY IF EXISTS "Anyone can read medical records" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete own files" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can upload medical records" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can delete medical records" ON storage.objects;
 
-CREATE POLICY "Anyone can read medical records" ON storage.objects FOR SELECT USING (bucket_id = 'medical-records');
-CREATE POLICY "Authenticated users can upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'medical-records' and auth.role() = 'authenticated');
-CREATE POLICY "Users can delete own files" ON storage.objects FOR DELETE USING (bucket_id = 'medical-records' and auth.uid() = owner);
+CREATE POLICY "Anyone can read medical records" ON storage.objects FOR SELECT USING (bucket_id IN ('medical-records', 'documents'));
+CREATE POLICY "Anyone can upload medical records" ON storage.objects FOR INSERT WITH CHECK (bucket_id IN ('medical-records', 'documents'));
+CREATE POLICY "Anyone can delete medical records" ON storage.objects FOR DELETE USING (bucket_id IN ('medical-records', 'documents'));
 
 -- ========== CONSULTATION BRIEFS ==========
 CREATE TABLE IF NOT EXISTS public.consultation_briefs (
@@ -99,10 +105,14 @@ ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Patients can view own appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Doctors can view own appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Patients can insert appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Patients can update appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Doctors can update appointments" ON public.appointments;
 
 CREATE POLICY "Patients can view own appointments" ON public.appointments FOR SELECT USING (auth.uid() = patient_id);
 CREATE POLICY "Doctors can view own appointments" ON public.appointments FOR SELECT USING (auth.uid() = doctor_id);
 CREATE POLICY "Patients can insert appointments" ON public.appointments FOR INSERT WITH CHECK (auth.uid() = patient_id);
+CREATE POLICY "Patients can update appointments" ON public.appointments FOR UPDATE USING (auth.uid() = patient_id);
+CREATE POLICY "Doctors can update appointments" ON public.appointments FOR UPDATE USING (auth.uid() = doctor_id);
 
 -- ========== HEALTH MILESTONES ==========
 CREATE TABLE IF NOT EXISTS public.health_milestones (
@@ -120,14 +130,24 @@ CREATE TABLE IF NOT EXISTS public.health_milestones (
 ALTER TABLE public.health_milestones ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Patients can view own milestones" ON public.health_milestones;
+DROP POLICY IF EXISTS "Doctors can view patient milestones" ON public.health_milestones;
 DROP POLICY IF EXISTS "Patients can insert milestones" ON public.health_milestones;
 DROP POLICY IF EXISTS "Doctors can insert milestones" ON public.health_milestones;
 DROP POLICY IF EXISTS "Patients can update milestones" ON public.health_milestones;
+DROP POLICY IF EXISTS "Patients can delete own milestones" ON public.health_milestones;
 
 CREATE POLICY "Patients can view own milestones" ON public.health_milestones FOR SELECT USING (auth.uid() = patient_id);
+CREATE POLICY "Doctors can view patient milestones" ON public.health_milestones FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM public.appointments a
+    WHERE a.doctor_id = auth.uid() AND a.patient_id = health_milestones.patient_id
+  )
+  OR auth.uid() = actor_id
+);
 CREATE POLICY "Patients can insert milestones" ON public.health_milestones FOR INSERT WITH CHECK (auth.uid() = patient_id);
 CREATE POLICY "Doctors can insert milestones" ON public.health_milestones FOR INSERT WITH CHECK (true);
 CREATE POLICY "Patients can update milestones" ON public.health_milestones FOR UPDATE USING (auth.uid() = patient_id);
+CREATE POLICY "Patients can delete own milestones" ON public.health_milestones FOR DELETE USING (auth.uid() = patient_id);
 
 -- ========== PENDING DOCUMENT UPLOADS ==========
 CREATE TABLE IF NOT EXISTS public.pending_document_uploads (

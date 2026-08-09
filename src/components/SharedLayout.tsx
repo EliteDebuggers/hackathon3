@@ -21,16 +21,92 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const [userName, setUserName] = useState<string>('');
   const [userCode, setUserCode] = useState<string>('');
 
+  const [pendingAppts, setPendingAppts] = useState<any[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const [patientAlerts, setPatientAlerts] = useState<any[]>([]);
+  const [isPatientNotifOpen, setIsPatientNotifOpen] = useState(false);
+  const patientNotifRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+      if (patientNotifRef.current && !patientNotifRef.current.contains(event.target as Node)) {
+        setIsPatientNotifOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     fetchUserProfile();
+
+    if (role === 'doctor') {
+      fetchPendingAppointments();
+      const subscription = supabase
+        .channel('appointments-changes-shared')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+          fetchPendingAppointments();
+        })
+        .subscribe();
+      
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        subscription.unsubscribe();
+      };
+    }
+
+    if (role === 'patient') {
+      fetchPatientAlerts();
+      const sub = supabase
+        .channel('patient-alerts-header')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'health_milestones' }, () => {
+          fetchPatientAlerts();
+        })
+        .subscribe();
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        sub.unsubscribe();
+      };
+    }
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [role]);
+
+  const fetchPendingAppointments = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*, patient:users!appointments_patient_id_fkey(full_name)')
+      .eq('doctor_id', user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setPendingAppts(data);
+    }
+  };
+
+  const fetchPatientAlerts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('health_milestones')
+        .select('*')
+        .eq('patient_id', user.id)
+        .neq('status', 'read')
+        .order('created_at', { ascending: false })
+        .limit(8);
+      if (data) setPatientAlerts(data);
+    } catch { /* ignore */ }
+  };
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -62,19 +138,19 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   };
 
   const patientLinks = [
-    { name: 'Dashboard', icon: 'solar:heart-pulse-bold', path: '/patient-dashboard' },
-    { name: 'Medical Records', icon: 'solar:folder-with-files-bold', path: '/patient-records' },
-    { name: 'Medications', icon: 'solar:bell-bing-linear', path: '/patient-medications' },
+    { name: 'Dashboard', icon: 'solar:heart-pulse-linear', path: '/patient-dashboard' },
+    { name: 'Medical Records', icon: 'solar:folder-with-files-linear', path: '/patient-records' },
+    { name: 'Medications', icon: 'solar:pill-linear', path: '/patient-medications' },
+    { name: 'Notifications', icon: 'solar:bell-bing-linear', path: '/patient-messages' },
     { name: 'Find Doctors', icon: 'solar:stethoscope-linear', path: '/patient-doctors' },
     { name: 'Appointments', icon: 'solar:calendar-linear', path: '/patient-appointments' },
-    { name: 'Messages', icon: 'solar:chat-round-linear', path: '/patient-messages' },
     { name: 'Settings', icon: 'solar:settings-linear', path: '/patient-settings' },
   ];
 
   const doctorLinks = [
-    { name: 'Dashboard', icon: 'solar:widget-linear', path: '/doctor-dashboard' },
-    { name: 'My Schedule', icon: 'solar:calendar-date-linear', path: '/doctor-schedule' },
     { name: 'Patients', icon: 'solar:users-group-rounded-linear', path: '/doctor-patients' },
+    { name: 'My Schedule', icon: 'solar:calendar-date-linear', path: '/doctor-schedule' },
+    { name: 'Appointments', icon: 'solar:calendar-linear', path: '/doctor-appointments' },
     { name: 'Settings', icon: 'solar:settings-linear', path: '/doctor-settings' },
   ];
 
@@ -97,23 +173,173 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
 
         <div className="flex items-center space-x-2 md:space-x-4">
           {role === 'patient' && (
-            <button
-              onClick={toggleChatbot}
-              className={`px-4 py-2 rounded-xl transition-all font-medium flex items-center ${isChatbotOpen
-                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover:opacity-90'
-                }`}
-              title="Toggle Swasth+"
-            >
-              <Icon icon="solar:chat-round-call-outline" className="w-5 h-5" />
-              <span className="ml-2 hidden sm:block text-sm">Swasth+</span>
-            </button>
+            <>
+              <button
+                onClick={toggleChatbot}
+                className={`px-4 py-2 rounded-xl transition-all font-medium flex items-center ${isChatbotOpen
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover:opacity-90'
+                  }`}
+                title="Toggle Swasth+"
+              >
+                <Icon icon="solar:chat-round-call-outline" className="w-5 h-5" />
+                <span className="ml-2 hidden sm:block text-sm">Swasth+</span>
+              </button>
+
+              {/* Patient Notification Bell */}
+              <div className="relative" ref={patientNotifRef}>
+                <button
+                  onClick={() => setIsPatientNotifOpen(!isPatientNotifOpen)}
+                  className="p-2 text-gray-400 hover:text-violet-600 transition flex items-center relative"
+                  title="Notifications"
+                >
+                  <Icon icon="solar:bell-bing-linear" className="w-6 h-6" />
+                  {patientAlerts.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-violet-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-bounce">
+                      {patientAlerts.length}
+                    </span>
+                  )}
+                </button>
+
+                {isPatientNotifOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl py-3 z-50 border border-gray-100 max-h-96 overflow-y-auto">
+                    <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                      <span className="font-extrabold text-gray-900 text-sm">Notifications</span>
+                      {patientAlerts.length > 0 && (
+                        <span className="bg-violet-50 text-violet-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                          {patientAlerts.length} New
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-1.5">
+                      {patientAlerts.length === 0 ? (
+                        <div className="text-center py-8 text-xs text-gray-500">
+                          <Icon icon="solar:bell-linear" className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          No new notifications.
+                        </div>
+                      ) : (
+                        patientAlerts.slice(0, 5).map(alert => (
+                          <button
+                            key={alert.id}
+                            onClick={() => {
+                              setIsPatientNotifOpen(false);
+                              navigate('/patient-messages');
+                            }}
+                            className="w-full text-left p-3 hover:bg-gray-50 rounded-xl transition flex gap-3 items-start border border-transparent hover:border-gray-100"
+                          >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                              alert.milestone_type === 'doctor_note' ? 'bg-violet-100 text-violet-600' :
+                              alert.milestone_type === 'action_required' ? 'bg-amber-100 text-amber-600' :
+                              'bg-blue-100 text-blue-600'
+                            }`}>
+                              <Icon icon={alert.milestone_type === 'doctor_note' ? 'solar:letter-bold' : alert.milestone_type === 'action_required' ? 'solar:danger-triangle-bold' : 'solar:calendar-bold'} className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-800 leading-tight truncate">{alert.title}</p>
+                              <p className="text-[10px] text-gray-500 mt-0.5 line-clamp-1">{alert.description}</p>
+                              <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                <Icon icon="solar:clock-circle-linear" className="w-3 h-3" />
+                                {new Date(alert.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <div className="p-2 border-t border-gray-100 mt-1.5 text-center">
+                      <button
+                        onClick={() => {
+                          setIsPatientNotifOpen(false);
+                          navigate('/patient-messages');
+                        }}
+                        className="text-xs font-bold text-violet-600 hover:text-violet-700 w-full"
+                      >
+                        View All Notifications
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gray-100/80 border border-gray-200/60 rounded-xl text-xs">
             <Icon icon={role === 'doctor' ? "solar:stethoscope-bold" : "solar:user-circle-bold"} className="w-4 h-4 text-blue-600 shrink-0" />
             <span className="font-bold text-gray-900 truncate max-w-[120px] md:max-w-[180px]">{userName}</span>
             <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-extrabold rounded-md uppercase tracking-wider shrink-0">{userCode}</span>
           </div>
+
+          {role === 'doctor' && (
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="p-2 text-gray-400 hover:text-blue-600 transition flex items-center relative"
+                title="Notifications"
+              >
+                <Icon icon="solar:bell-bing-linear" className="w-6 h-6" />
+                {pendingAppts.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-bounce">
+                    {pendingAppts.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl py-3 z-50 border border-gray-100 max-h-96 overflow-y-auto">
+                  <div className="px-4 py-2 border-b border-gray-100 flex justify-between items-center">
+                    <span className="font-extrabold text-gray-900 text-sm">Notifications</span>
+                    {pendingAppts.length > 0 && (
+                      <span className="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                        {pendingAppts.length} Pending
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-1.5">
+                    {pendingAppts.length === 0 ? (
+                      <div className="text-center py-8 text-xs text-gray-500">
+                        <Icon icon="solar:bell-linear" className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        No new appointment requests.
+                      </div>
+                    ) : (
+                      pendingAppts.map(appt => (
+                        <button
+                          key={appt.id}
+                          onClick={() => {
+                            setIsNotifOpen(false);
+                            navigate('/doctor-appointments');
+                          }}
+                          className="w-full text-left p-3 hover:bg-gray-50 rounded-xl transition flex gap-3 items-start border border-transparent hover:border-gray-100"
+                        >
+                          <div className="w-8.5 h-8.5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                            {appt.patient?.full_name?.charAt(0) || 'P'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-gray-800 leading-tight">
+                              New request: {appt.patient?.full_name || 'Patient'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                              <Icon icon="solar:calendar-linear" className="w-3 h-3 text-gray-400" />
+                              {appt.appointment_date} • {appt.appointment_time}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-2 border-t border-gray-100 mt-1.5 text-center">
+                    <button
+                      onClick={() => {
+                        setIsNotifOpen(false);
+                        navigate('/doctor-appointments');
+                      }}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 w-full"
+                    >
+                      Manage All Appointments
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="w-px h-8 bg-gray-200 hidden sm:block mx-1"></div>
           <div className="relative" ref={profileRef}>

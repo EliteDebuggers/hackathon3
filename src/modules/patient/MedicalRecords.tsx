@@ -5,8 +5,9 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import DeleteDocumentModal from '../shared/DeleteDocumentModal';
 import PendingApprovalsModal from './components/PendingApprovalsModal';
-import { getLocalDietPlan } from '../../lib/medications';
+import { getLocalDietPlan, saveLocalDietPlan } from '../../lib/medications';
 import type { DietPlan } from '../../lib/medications';
+import { getLocalDocuments, saveLocalDocument, removeLocalDocument } from '../../lib/documents';
 
 interface Document {
   id: string;
@@ -16,6 +17,8 @@ interface Document {
   file_url: string;
   created_at: string;
   uploader_id: string;
+  patient_id?: string;
+  doctor_id?: string | null;
   provider_name?: string;
 }
 
@@ -35,6 +38,34 @@ export default function MedicalRecords() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllRecords, setShowAllRecords] = useState(true);
 
+  // Custom Folders & Multi-Folder Mapping State
+  const [customFolders, setCustomFolders] = useState<string[]>(['Lab Reports', 'Prescriptions', 'Cardiology Scans', 'Nutrition & Diet']);
+  const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [docFolderMap, setDocFolderMap] = useState<Record<string, string[]>>({});
+  const [mappingDoc, setMappingDoc] = useState<Document | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<{ name: string; count: number } | null>(null);
+
+  // Pre-Upload File Preview & Target Folder Modal State
+  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
+  const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
+  const [uploadTargetFolder, setUploadTargetFolder] = useState<string>('Lab Reports');
+  const [isCreatingNewFolderInModal, setIsCreatingNewFolderInModal] = useState(false);
+  const [modalNewFolderName, setModalNewFolderName] = useState('');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // Custom Diet Plan Editor State
+  const [isEditDietOpen, setIsEditDietOpen] = useState(false);
+  const [dietTitle, setDietTitle] = useState('');
+  const [calories, setCalories] = useState(2000);
+  const [protein, setProtein] = useState(120);
+  const [carbs, setCarbs] = useState(220);
+  const [fats, setFats] = useState(65);
+  const [breakfast, setBreakfast] = useState('');
+  const [lunch, setLunch] = useState('');
+  const [dinner, setDinner] = useState('');
+  const [snacks, setSnacks] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,17 +76,35 @@ export default function MedicalRecords() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
 
+    const pid = user ? user.id : 'guest-patient';
+    setUserId(pid);
+
+    fetchDocuments(pid);
     if (user) {
-      setUserId(user.id);
-      fetchDocuments(user.id);
       fetchPendingApprovals(user.id);
-      const plan = getLocalDietPlan(user.id);
-      setDietPlan(plan);
-    } else {
-      const plan = getLocalDietPlan('guest-patient');
-      setDietPlan(plan);
-      setLoading(false);
     }
+
+    const plan = getLocalDietPlan(pid);
+    setDietPlan(plan);
+    if (plan) {
+      setDietTitle(plan.title || 'My Daily Health Diet');
+      setCalories(plan.target_calories || 2000);
+      setProtein(plan.protein_g || 120);
+      setCarbs(plan.carbs_g || 220);
+      setFats(plan.fats_g || 65);
+      setBreakfast(plan.breakfast || '');
+      setLunch(plan.lunch || '');
+      setDinner(plan.dinner || '');
+      setSnacks(plan.snacks || '');
+    }
+
+    // Load Local Folder Maps & Folders
+    try {
+      const savedFolders = localStorage.getItem(`swasth_folders_${pid}`);
+      if (savedFolders) setCustomFolders(JSON.parse(savedFolders));
+      const savedMap = localStorage.getItem(`swasth_doc_map_${pid}`);
+      if (savedMap) setDocFolderMap(JSON.parse(savedMap));
+    } catch (e) {}
   };
 
   const fetchPendingApprovals = async (pid: string) => {
@@ -73,60 +122,218 @@ export default function MedicalRecords() {
 
   const fetchDocuments = async (pid: string) => {
     try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('patient_id', pid)
-        .order('created_at', { ascending: false });
+      let dbDocs: Document[] = [];
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('patient_id', pid)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setDocuments(data || []);
+        if (!error && data) dbDocs = data as Document[];
+      } catch (err) {
+        console.error('Error fetching documents from db:', err);
+      }
+
+      const localDocs = getLocalDocuments(pid) as Document[];
+      const docMap = new Map<string, Document>();
+      dbDocs.forEach(d => docMap.set(d.id, d));
+      localDocs.forEach(d => {
+        if (!docMap.has(d.id)) {
+          docMap.set(d.id, d);
+        }
+      });
+
+      const merged = Array.from(docMap.values()).sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setDocuments(merged);
     } catch (err) {
-      console.error('Error fetching documents:', err);
+      console.error('Error in fetchDocuments:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddFolder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFolderName.trim()) return;
+    const name = newFolderName.trim();
+    if (!customFolders.includes(name)) {
+      const updated = [...customFolders, name];
+      setCustomFolders(updated);
+      localStorage.setItem(`swasth_folders_${userId}`, JSON.stringify(updated));
+    }
+    setNewFolderName('');
+    setIsNewFolderOpen(false);
+  };
+
+  const confirmDeleteFolder = () => {
+    if (!folderToDelete) return;
+    const folderName = folderToDelete.name;
+
+    const updatedFolders = customFolders.filter(f => f !== folderName);
+    setCustomFolders(updatedFolders);
+    localStorage.setItem(`swasth_folders_${userId}`, JSON.stringify(updatedFolders));
+
+    const newDocMap = { ...docFolderMap };
+    Object.keys(newDocMap).forEach(docId => {
+      newDocMap[docId] = (newDocMap[docId] || []).filter(f => f !== folderName);
+    });
+    setDocFolderMap(newDocMap);
+    localStorage.setItem(`swasth_doc_map_${userId}`, JSON.stringify(newDocMap));
+
+    setFolderToDelete(null);
+  };
+
+  const toggleDocFolderMap = (docId: string, folderName: string) => {
+    const current = docFolderMap[docId] || [];
+    const isMapped = current.includes(folderName);
+    const updated = isMapped ? current.filter(f => f !== folderName) : [...current, folderName];
+    const newMap = { ...docFolderMap, [docId]: updated };
+    setDocFolderMap(newMap);
+    localStorage.setItem(`swasth_doc_map_${userId}`, JSON.stringify(newMap));
+  };
+
+  const handleSaveDietPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+
+    const updatedPlan: DietPlan = {
+      id: dietPlan?.id || `diet-${Date.now()}`,
+      patient_id: userId,
+      doctor_name: dietPlan?.doctor_name || 'Self Customized',
+      title: dietTitle || 'Personalized Health Diet',
+      target_calories: Number(calories),
+      protein_g: Number(protein),
+      carbs_g: Number(carbs),
+      fats_g: Number(fats),
+      breakfast: breakfast,
+      lunch: lunch,
+      dinner: dinner,
+      snacks: snacks,
+      recommended_foods: dietPlan?.recommended_foods || [],
+      restricted_foods: dietPlan?.restricted_foods || [],
+      updated_at: new Date().toISOString()
+    };
+
+    saveLocalDietPlan(userId, updatedPlan);
+    setDietPlan(updatedPlan);
+    setIsEditDietOpen(false);
+    alert('Diet & Nutrition Plan updated successfully!');
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    setSelectedFileForUpload(file);
+    const objectUrl = URL.createObjectURL(file);
+    setUploadPreviewUrl(objectUrl);
+    setUploadTargetFolder(customFolders[0] || uploadCategory);
+    setIsCreatingNewFolderInModal(false);
+    setModalNewFolderName('');
+    setIsUploadModalOpen(true);
+    event.target.value = '';
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!selectedFileForUpload || !userId) return;
     try {
       setUploading(true);
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image/document to upload.');
+      const file = selectedFileForUpload;
+      let targetFolder = uploadTargetFolder;
+
+      if (isCreatingNewFolderInModal && modalNewFolderName.trim()) {
+        const newFolder = modalNewFolderName.trim();
+        targetFolder = newFolder;
+        if (!customFolders.includes(newFolder)) {
+          const updated = [...customFolders, newFolder];
+          setCustomFolders(updated);
+          localStorage.setItem(`swasth_folders_${userId}`, JSON.stringify(updated));
+        }
       }
 
-      const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${Math.random()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
+      let publicUrl = '';
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+        publicUrl = urlData.publicUrl;
+      } catch (storageErr) {
+        console.warn('Supabase storage bucket fallback activated:', storageErr);
+        publicUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
 
       const docType = uploadCategory === 'Lab Report' ? 'REPORT' : uploadCategory === 'Scan/Imaging' ? 'SCAN' : uploadCategory === 'Prescription' ? 'RX' : 'NOTE';
 
-      const { error: dbError } = await supabase
+      const newDoc: Partial<Document> = {
+        patient_id: userId,
+        uploader_id: userId,
+        title: file.name,
+        category: uploadCategory,
+        document_type: docType,
+        file_url: publicUrl,
+      };
+
+      const { data: insertedData, error: dbError } = await supabase
         .from('documents')
-        .insert([{
-          patient_id: userId,
-          uploader_id: userId,
-          title: file.name,
-          category: uploadCategory,
-          document_type: docType,
-          file_url: publicUrl,
-        }]);
+        .insert([newDoc])
+        .select()
+        .single();
 
-      if (dbError) throw dbError;
+      let createdDocId = insertedData?.id;
 
-      fetchDocuments(userId);
+      const docToSave: Document = {
+        id: createdDocId || `doc-${Date.now()}`,
+        patient_id: userId,
+        uploader_id: userId,
+        title: file.name,
+        category: uploadCategory,
+        document_type: docType,
+        file_url: publicUrl,
+        created_at: insertedData?.created_at || new Date().toISOString()
+      };
+      createdDocId = docToSave.id;
+
+      saveLocalDocument(userId, docToSave);
+
+      if (dbError) {
+        setDocuments(prev => [docToSave, ...prev.filter(d => d.id !== docToSave.id)]);
+      } else {
+        fetchDocuments(userId);
+      }
+
+      if (createdDocId && targetFolder) {
+        const currentMapped = docFolderMap[createdDocId] || [];
+        if (!currentMapped.includes(targetFolder)) {
+          const newMap = { ...docFolderMap, [createdDocId]: [...currentMapped, targetFolder] };
+          setDocFolderMap(newMap);
+          localStorage.setItem(`swasth_doc_map_${userId}`, JSON.stringify(newMap));
+        }
+      }
+
+      setIsUploadModalOpen(false);
+      if (uploadPreviewUrl) {
+        URL.revokeObjectURL(uploadPreviewUrl);
+        setUploadPreviewUrl(null);
+      }
+      setSelectedFileForUpload(null);
     } catch (error: any) {
-      alert(error.message);
+      alert(error.message || 'File upload failed.');
     } finally {
       setUploading(false);
     }
@@ -159,19 +366,29 @@ export default function MedicalRecords() {
   const getGroupedDocs = () => {
     const grouped: Record<string, Document[]> = {};
 
+    if (groupBy === 'category') {
+      customFolders.forEach(folder => {
+        grouped[folder] = [];
+      });
+    }
+
     filteredDocs.forEach(doc => {
-      let key = 'General';
+      let keys: string[] = ['General Health Records'];
+
       if (groupBy === 'category') {
-        key = doc.category || 'General Health Records';
+        const mapped = docFolderMap[doc.id] || [];
+        keys = mapped.length > 0 ? mapped : [doc.category || 'General Health Records'];
       } else if (groupBy === 'date') {
         const d = new Date(doc.created_at);
-        key = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        keys = [d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })];
       } else if (groupBy === 'provider') {
-        key = doc.provider_name || 'Personal Uploads';
+        keys = [doc.provider_name || 'Personal Uploads'];
       }
 
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(doc);
+      keys.forEach(key => {
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(doc);
+      });
     });
 
     return grouped;
@@ -246,9 +463,9 @@ export default function MedicalRecords() {
               )}
             </div>
 
-            {activeTab === 'records' && (
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <div className="relative flex-1 md:w-56">
+            {activeTab === 'records' ? (
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div className="relative flex-1 md:w-48">
                   <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                   <input
                     type="text"
@@ -259,23 +476,20 @@ export default function MedicalRecords() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <select
-                    value={uploadCategory}
-                    onChange={(e) => setUploadCategory(e.target.value)}
-                    className="text-xs bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 outline-none font-medium text-gray-700"
-                  >
-                    <option value="Lab Report">Lab Report</option>
-                    <option value="Prescription">Prescription</option>
-                    <option value="Scan/Imaging">Scan/Imaging</option>
-                    <option value="Doctor Note">Doctor Note</option>
-                  </select>
+                <button
+                  onClick={() => setIsNewFolderOpen(true)}
+                  className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-blue-200"
+                >
+                  <Icon icon="solar:folder-add-bold" className="w-4 h-4" />
+                  + New Folder
+                </button>
 
+                <div className="flex items-center gap-2">
                   <input
                     type="file"
                     id="file-upload"
                     className="hidden"
-                    onChange={handleFileUpload}
+                    onChange={handleFileSelect}
                     disabled={uploading}
                   />
                   <label
@@ -287,6 +501,14 @@ export default function MedicalRecords() {
                   </label>
                 </div>
               </div>
+            ) : (
+              <button
+                onClick={() => setIsEditDietOpen(true)}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Icon icon="solar:pen-bold" className="w-4 h-4" />
+                Customize Nutrition Targets
+              </button>
             )}
           </div>
 
@@ -320,9 +542,19 @@ export default function MedicalRecords() {
                               <p className="text-xs text-gray-500 font-medium">{groupDocs.length} {groupDocs.length === 1 ? 'Record' : 'Records'}</p>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
-                            <Icon icon="solar:menu-dots-bold" className="w-5 h-5" />
-                          </button>
+
+                          {groupBy === 'category' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFolderToDelete({ name: groupTitle, count: groupDocs.length });
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title={`Delete ${groupTitle} folder`}
+                            >
+                              <Icon icon="solar:trash-bin-trash-linear" className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
 
                         <div className="space-y-2 flex-1">
@@ -347,7 +579,14 @@ export default function MedicalRecords() {
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setMappingDoc(doc); }}
+                                    className="p-1 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"
+                                    title="Map to Folders"
+                                  >
+                                    <Icon icon="solar:folder-path-connect-linear" className="w-4 h-4" />
+                                  </button>
                                   {getDocumentBadge(doc)}
                                   {doc.uploader_id === userId && (
                                     <button
@@ -388,10 +627,10 @@ export default function MedicalRecords() {
                   <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 p-4 rounded-xl border border-teal-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                     <div>
                       <span className="px-2.5 py-0.5 bg-teal-100 text-teal-800 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                        Doctor Prescribed Diet Plan
+                        Doctor & Custom Prescribed Diet
                       </span>
                       <h3 className="text-xl font-extrabold text-teal-950 mt-1">{dietPlan.title}</h3>
-                      <p className="text-xs text-teal-700 font-medium mt-0.5">Prescribed by {dietPlan.doctor_name || 'Nutrition Specialist'}</p>
+                      <p className="text-xs text-teal-700 font-medium mt-0.5">Assigned by {dietPlan.doctor_name || 'Nutrition Specialist'}</p>
                     </div>
 
                     <div className="bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl border border-teal-100/50 shadow-sm text-center">
@@ -454,11 +693,373 @@ export default function MedicalRecords() {
 
       </div>
 
+      {/* New Custom Folder Modal */}
+      {isNewFolderOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl p-5">
+            <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Icon icon="solar:folder-add-bold" className="w-5 h-5 text-blue-600" />
+              Create Custom Folder
+            </h3>
+            <form onSubmit={handleAddFolder} className="space-y-4">
+              <input
+                type="text"
+                required
+                placeholder="Folder Name (e.g. Annual Health 2026)"
+                value={newFolderName}
+                onChange={e => setNewFolderName(e.target.value)}
+                className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setIsNewFolderOpen(false)} className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-sm">
+                  Create Folder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Folder Warning Modal */}
+      {folderToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 animate-fade-in">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4">
+              <Icon icon="solar:danger-triangle-bold" className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Folder</h3>
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+              Are you sure you want to delete the folder <span className="font-bold text-gray-900">"{folderToDelete.name}"</span>?
+            </p>
+            {folderToDelete.count > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-medium mb-4 flex items-start gap-2">
+                <Icon icon="solar:bell-bing-bold" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Warning:</strong> This folder currently contains <strong>{folderToDelete.count} document{folderToDelete.count > 1 ? 's' : ''}</strong>. Deleting the folder will remove this folder classification from those documents.
+                </span>
+              </div>
+            )}
+            <div className="flex justify-end gap-2.5">
+              <button
+                onClick={() => setFolderToDelete(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteFolder}
+                className="px-5 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md transition"
+              >
+                Delete Folder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Record Preview & Folder Select Modal */}
+      {isUploadModalOpen && selectedFileForUpload && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl p-6 animate-fade-in max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100 mb-4 shrink-0">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Icon icon="solar:upload-track-bold" className="w-5 h-5 text-blue-600" />
+                Preview & Upload Record
+              </h3>
+              <button
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
+                  setSelectedFileForUpload(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <Icon icon="solar:close-circle-linear" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+              {/* Document Preview Box */}
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden min-h-[160px]">
+                {selectedFileForUpload.type.startsWith('image/') && uploadPreviewUrl ? (
+                  <img
+                    src={uploadPreviewUrl}
+                    alt="Upload Preview"
+                    className="max-h-52 w-auto object-contain rounded-xl shadow-sm border border-gray-200"
+                  />
+                ) : (
+                  <div className="text-center py-4">
+                    <Icon icon="solar:file-text-bold-duotone" className="w-16 h-16 text-blue-600 mx-auto mb-2" />
+                    <p className="font-bold text-gray-900 text-sm truncate max-w-xs">{selectedFileForUpload.name}</p>
+                    <p className="text-xs text-gray-400 mt-1 font-medium">
+                      {(selectedFileForUpload.size / (1024 * 1024)).toFixed(2)} MB • {selectedFileForUpload.type || 'Document'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Record Category */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Document Category</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {['Lab Report', 'Prescription', 'Scan/Imaging', 'Doctor Note'].map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setUploadCategory(cat)}
+                      className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${
+                        uploadCategory === cat
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Destination Folder Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Destination Folder</label>
+                <div className="space-y-2">
+                  <select
+                    value={isCreatingNewFolderInModal ? '__NEW__' : uploadTargetFolder}
+                    onChange={e => {
+                      if (e.target.value === '__NEW__') {
+                        setIsCreatingNewFolderInModal(true);
+                      } else {
+                        setIsCreatingNewFolderInModal(false);
+                        setUploadTargetFolder(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    {customFolders.map(folder => (
+                      <option key={folder} value={folder}>
+                        📁 {folder}
+                      </option>
+                    ))}
+                    <option value="__NEW__">+ Create New Folder...</option>
+                  </select>
+
+                  {isCreatingNewFolderInModal && (
+                    <div className="flex gap-2 items-center pt-1 animate-fade-in">
+                      <input
+                        type="text"
+                        placeholder="Enter new folder name..."
+                        value={modalNewFolderName}
+                        onChange={e => setModalNewFolderName(e.target.value)}
+                        className="flex-1 px-3.5 py-2 border border-blue-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="pt-4 border-t border-gray-100 flex justify-end gap-2 shrink-0 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  if (uploadPreviewUrl) URL.revokeObjectURL(uploadPreviewUrl);
+                  setSelectedFileForUpload(null);
+                }}
+                className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={handleConfirmUpload}
+                className={`px-5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition flex items-center gap-1.5 ${
+                  uploading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {uploading ? (
+                  <>
+                    <Icon icon="solar:pulse-linear" className="w-4 h-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="solar:upload-linear" className="w-4 h-4" />
+                    Confirm & Upload
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Map Document to Folders Modal */}
+      {mappingDoc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Icon icon="solar:folder-path-connect-bold" className="w-5 h-5 text-blue-600" />
+              Map Document to Folders
+            </h3>
+            <p className="text-xs text-gray-500 mb-4 truncate font-medium">Assign <span className="font-bold text-gray-800">{mappingDoc.title}</span> to multiple folders.</p>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto mb-6">
+              {customFolders.map(folder => {
+                const isMapped = (docFolderMap[mappingDoc.id] || []).includes(folder);
+                return (
+                  <div
+                    key={folder}
+                    onClick={() => toggleDocFolderMap(mappingDoc.id, folder)}
+                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                      isMapped ? 'border-blue-600 bg-blue-50/70 font-bold text-blue-800' : 'border-gray-200 hover:bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <span className="text-xs">{folder}</span>
+                    <Icon icon={isMapped ? "solar:check-circle-bold" : "solar:circle-linear"} className={`w-4 h-4 ${isMapped ? 'text-blue-600' : 'text-gray-400'}`} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={() => setMappingDoc(null)} className="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl text-xs shadow-sm">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Nutrition Plan Modal */}
+      {isEditDietOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 animate-fade-in">
+            <div className="flex justify-between items-center pb-3 border-b mb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Icon icon="solar:leaf-bold" className="w-5 h-5 text-teal-600" />
+                Customize Nutrition Targets
+              </h3>
+              <button onClick={() => setIsEditDietOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <Icon icon="solar:close-circle-linear" className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDietPlan} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px] mb-1">Plan Title</label>
+                <input
+                  type="text"
+                  required
+                  value={dietTitle}
+                  onChange={e => setDietTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px] mb-1">Calories</label>
+                  <input
+                    type="number"
+                    value={calories}
+                    onChange={e => setCalories(Number(e.target.value))}
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-xl text-center font-bold text-teal-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px] mb-1">Protein (g)</label>
+                  <input
+                    type="number"
+                    value={protein}
+                    onChange={e => setProtein(Number(e.target.value))}
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-xl text-center font-bold text-amber-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px] mb-1">Carbs (g)</label>
+                  <input
+                    type="number"
+                    value={carbs}
+                    onChange={e => setCarbs(Number(e.target.value))}
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-xl text-center font-bold text-blue-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px] mb-1">Fats (g)</label>
+                  <input
+                    type="number"
+                    value={fats}
+                    onChange={e => setFats(Number(e.target.value))}
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-xl text-center font-bold text-purple-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <div>
+                  <label className="block font-bold text-gray-700 text-[10px] mb-1">Breakfast Plan</label>
+                  <textarea
+                    rows={2}
+                    value={breakfast}
+                    onChange={e => setBreakfast(e.target.value)}
+                    className="w-full p-2 border border-gray-200 rounded-xl resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 text-[10px] mb-1">Lunch Plan</label>
+                  <textarea
+                    rows={2}
+                    value={lunch}
+                    onChange={e => setLunch(e.target.value)}
+                    className="w-full p-2 border border-gray-200 rounded-xl resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 text-[10px] mb-1">Dinner Plan</label>
+                  <textarea
+                    rows={2}
+                    value={dinner}
+                    onChange={e => setDinner(e.target.value)}
+                    className="w-full p-2 border border-gray-200 rounded-xl resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 text-[10px] mb-1">Snacks Plan</label>
+                  <textarea
+                    rows={2}
+                    value={snacks}
+                    onChange={e => setSnacks(e.target.value)}
+                    className="w-full p-2 border border-gray-200 rounded-xl resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setIsEditDietOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-bold">
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold shadow-md">
+                  Save Nutrition Plan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <DeleteDocumentModal
         isOpen={!!documentToDelete}
         document={documentToDelete}
         onClose={() => setDocumentToDelete(null)}
         onSuccess={(deletedId) => {
+          removeLocalDocument(userId, deletedId);
           setDocuments(prev => prev.filter(d => d.id !== deletedId));
           setDocumentToDelete(null);
         }}

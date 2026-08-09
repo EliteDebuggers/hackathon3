@@ -1,38 +1,54 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans relative">
       {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center transition-all duration-300 ${
+          isScrolled
+            ? 'bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-xs text-gray-900 py-3.5'
+            : 'bg-transparent border-b border-transparent text-gray-900 py-5'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-600 flex-shrink-0" />
           <span className="text-xl font-bold text-gray-900 tracking-tight">Swasth+</span>
         </div>
         <div className="flex items-center gap-6">
-          <a href="#patient-features" className="hidden md:flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
+          <a href="#patient-features" className="hidden md:flex items-center text-sm font-semibold text-gray-700 hover:text-blue-600 transition">
             Patients
           </a>
-          <a href="#doctor-features" className="hidden md:flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
+          <a href="#doctor-features" className="hidden md:flex items-center text-sm font-semibold text-gray-700 hover:text-blue-600 transition">
             Doctors
           </a>
-          <Link to="/doctors" className="hidden md:flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
-            <Icon icon="solar:stethoscope-linear" className="w-4 h-4 mr-1.5" />
-            Provider Portal
-          </Link>
-          <div className="h-4 w-px bg-gray-200 hidden md:block"></div>
+
           <button
             onClick={() => navigate('/login')}
-            className="text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+            className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition"
           >
             Log in
           </button>
           <button
             onClick={() => navigate('/login')}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-full transition hover:shadow-lg hover:shadow-blue-600/20"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition hover:shadow-lg hover:shadow-blue-600/20"
           >
             Get Started
           </button>
@@ -40,10 +56,15 @@ export default function Home() {
       </nav>
 
       <section 
-        className="relative px-6 py-20 lg:py-32 overflow-hidden bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/hero-bg.png')" }}
+        className="relative w-full min-h-screen px-6 pt-28 pb-16 lg:pt-32 lg:pb-24 flex items-center justify-center overflow-hidden"
+        style={{ 
+          backgroundImage: "url('/hero-bg.png')",
+          backgroundSize: "100% 100%",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat"
+        }}
       >
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none"></div>
 
         <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-7 text-center lg:text-left">
@@ -69,7 +90,7 @@ export default function Home() {
                 <Icon icon="solar:alt-arrow-right-linear" className="w-5 h-5 ml-2" />
               </button>
               <Link
-                to="/doctors"
+                to="/login"
                 className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 text-base font-semibold px-8 py-3.5 rounded-full transition hover:bg-gray-50 flex items-center justify-center shadow-sm"
               >
                 I'm a Healthcare Provider
@@ -207,7 +228,7 @@ export default function Home() {
 
             <div className="pt-4">
               <Link
-                to="/doctors"
+                to="/login"
                 className="inline-flex items-center text-green-600 font-medium hover:text-green-700 transition"
               >
                 Explore Provider Features
@@ -280,7 +301,7 @@ export default function Home() {
             <h4 className="text-lg font-bold mb-6">Platform</h4>
             <ul className="space-y-4">
               <li><a href="#patient-features" className="text-gray-400 hover:text-white transition">Patient Features</a></li>
-              <li><Link to="/doctors" className="text-gray-400 hover:text-white transition">Provider Portal</Link></li>
+              <li><Link to="/login" className="text-gray-400 hover:text-white transition">Provider Portal</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition">Security & Privacy</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition">Pricing</a></li>
             </ul>
