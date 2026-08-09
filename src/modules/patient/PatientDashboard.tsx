@@ -7,6 +7,7 @@ import PatientAIAssistant from './components/PatientAIAssistant';
 import HealthTimeline from './components/HealthTimeline';
 import AppointmentBookingModal from './components/AppointmentBookingModal';
 import SharedLayout from '../../components/SharedLayout';
+import { useLayoutContext } from '../../components/LayoutContext';
 
 interface Document {
   id: string;
@@ -18,17 +19,16 @@ interface Document {
 }
 
 export default function PatientDashboard() {
-  const navigate = useNavigate();
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [userId, setUserId] = useState('');
-  const [uploadCategory, setUploadCategory] = useState('Lab Report');
-
+  const [uploading, setUploading] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{ title: string, file_url: string } | null>(null);
-
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<{ title: string, file_url: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploadCategory, setUploadCategory] = useState('Lab Report');
+  const navigate = useNavigate();
+  const { isChatbotOpen } = useLayoutContext();
 
   useEffect(() => {
     checkUser();
@@ -160,7 +160,7 @@ export default function PatientDashboard() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          <div className="lg:w-2/3 flex flex-col gap-6 w-full">
+          <div className={`${isChatbotOpen ? 'lg:w-2/3' : 'w-full'} flex flex-col gap-6 w-full transition-all duration-300`}>
             <div className="flex justify-end">
               <button
                 onClick={() => setBookingModalOpen(true)}
@@ -255,9 +255,11 @@ export default function PatientDashboard() {
               </div>
             </div>
           </div>
-          <div className="lg:w-1/3 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] overflow-y-auto w-full no-scrollbar">
-            <PatientAIAssistant patientId={userId} documents={documents} />
-          </div>
+          {isChatbotOpen && (
+            <div className="lg:w-1/3 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] overflow-y-auto w-full no-scrollbar">
+              <PatientAIAssistant patientId={userId} documents={documents} />
+            </div>
+          )}
         </div>
       </div>
       <DocumentViewerModal
