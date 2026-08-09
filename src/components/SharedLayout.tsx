@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LayoutContext } from './LayoutContext';
+import { useLayoutContext } from './LayoutContext';
 import {
   Activity,
   Calendar,
@@ -24,16 +24,12 @@ interface SharedLayoutProps {
 
 export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const { isChatbotOpen, toggleChatbot } = useLayoutContext();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/');
-  };
-
-  const toggleChatbot = () => {
-    setIsChatbotOpen(!isChatbotOpen);
   };
 
   const patientLinks = [
@@ -51,7 +47,6 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const links = role === 'patient' ? patientLinks : doctorLinks;
 
   return (
-    <LayoutContext.Provider value={{ isChatbotOpen, toggleChatbot }}>
       <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
 
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shrink-0 z-30 relative shadow-sm">
@@ -70,13 +65,15 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
             {role === 'patient' && (
               <button 
                 onClick={toggleChatbot}
-                className={`p-2 transition-colors flex items-center ${
-                  isChatbotOpen ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
+                className={`px-4 py-2 rounded-xl transition-all font-medium flex items-center shadow-sm border ${
+                  isChatbotOpen 
+                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                    : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
                 }`}
                 title="Toggle AI Assistant"
               >
-                <BotMessageSquare className="w-6 h-6" />
-                <span className="ml-2 font-medium hidden sm:block text-sm">AI Assistant</span>
+                <BotMessageSquare className="w-5 h-5" />
+                <span className="ml-2 hidden sm:block text-sm">AI Assistant</span>
               </button>
             )}
             <div className="w-px h-8 bg-gray-200 hidden sm:block mx-2"></div>
@@ -142,6 +139,5 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
           )}
         </nav>
       </div>
-    </LayoutContext.Provider>
   );
 }
