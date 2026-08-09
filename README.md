@@ -5,7 +5,6 @@
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?logo=vite)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Grok API](https://img.shields.io/badge/AI Engine-xAI Grok--2-black)](https://console.xai.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Swasth+ is an open-source, AI-augmented healthcare platform designed to simplify patient care and streamline doctor workflows. By combining an autonomous **Grok (xAI)** health assistant with a dual-sided clinical dashboard, Swasth+ turns fragmented patient histories and diagnostic reports into actionable, doctor-authorized clinical briefs before appointments even begin.
 
