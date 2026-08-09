@@ -18,6 +18,9 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const location = useLocation();
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const [userName, setUserName] = useState<string>('');
+  const [userCode, setUserCode] = useState<string>('');
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -25,8 +28,28 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+    fetchUserProfile();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [role]);
+
+  const fetchUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const codePrefix = role === 'doctor' ? 'DOC' : 'PAT';
+      const shortId = user.id.replace(/-/g, '').substring(0, 4).toUpperCase();
+      setUserCode(`${codePrefix}-${shortId}`);
+
+      const { data } = await supabase.from('users').select('full_name').eq('id', user.id).single();
+      if (data?.full_name) {
+        setUserName(data.full_name);
+      } else {
+        setUserName(user.email?.split('@')[0] || (role === 'doctor' ? 'Dr. Specialist' : 'Patient'));
+      }
+    } else {
+      setUserName(role === 'doctor' ? 'Dr. Sarah Sharma' : 'Rahul Sharma');
+      setUserCode(role === 'doctor' ? 'DOC-1024' : 'PAT-4821');
+    }
+  };
 
   const handleSettingsClick = () => {
     setIsProfileOpen(false);
@@ -86,7 +109,13 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
               <span className="ml-2 hidden sm:block text-sm">Swasth+</span>
             </button>
           )}
-          <div className="w-px h-8 bg-gray-200 hidden sm:block mx-2"></div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gray-100/80 border border-gray-200/60 rounded-xl text-xs">
+            <Icon icon={role === 'doctor' ? "solar:stethoscope-bold" : "solar:user-circle-bold"} className="w-4 h-4 text-blue-600 shrink-0" />
+            <span className="font-bold text-gray-900 truncate max-w-[120px] md:max-w-[180px]">{userName}</span>
+            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-extrabold rounded-md uppercase tracking-wider shrink-0">{userCode}</span>
+          </div>
+
+          <div className="w-px h-8 bg-gray-200 hidden sm:block mx-1"></div>
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}

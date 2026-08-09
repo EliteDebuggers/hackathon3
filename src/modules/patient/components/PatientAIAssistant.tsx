@@ -141,9 +141,9 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
 
   const handleSend = async () => {
     if (!input.trim() && !pendingAttachment) return;
-    const apiKey = import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_XAI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_XAI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      alert("Please set VITE_GROK_API_KEY in your env file.");
+      alert("Please set VITE_GROQ_API_KEY in your .env.local file.");
       return;
     }
 
@@ -309,17 +309,20 @@ Be empathetic, concise, and professional. Always remind users to seek profession
       }
       formattedMessages.push({ role: 'user', content: userContent });
 
-      const grokModel = import.meta.env.VITE_GROK_MODEL || 'grok-2-latest';
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+      const isGroq = !!groqKey || (apiKey && apiKey.startsWith('gsk_'));
+      const apiEndpoint = isGroq ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.xai.com/v1/chat/completions';
+      const aiModel = isGroq ? (import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile') : (import.meta.env.VITE_GROK_MODEL || 'grok-2-latest');
 
       const callGrok = async (apiMsgs: any[]) => {
-        const res = await fetch('https://api.xai.com/v1/chat/completions', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: grokModel,
+            model: aiModel,
             messages: apiMsgs,
             tools: tools,
             temperature: 0.3
@@ -327,7 +330,7 @@ Be empathetic, concise, and professional. Always remind users to seek profession
         });
         if (!res.ok) {
           const errObj = await res.json().catch(() => ({}));
-          throw new Error(errObj?.error?.message || `Grok API returned status ${res.status}: ${res.statusText}`);
+          throw new Error(errObj?.error?.message || `AI API (${isGroq ? 'Groq' : 'Grok'}) returned status ${res.status}: ${res.statusText}`);
         }
         const data = await res.json();
         return data.choices?.[0]?.message;

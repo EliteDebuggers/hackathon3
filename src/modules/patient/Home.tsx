@@ -39,38 +39,53 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="relative px-6 py-20 lg:py-32 overflow-hidden bg-white">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-50 blur-3xl opacity-50 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-green-50 blur-3xl opacity-50 pointer-events-none"></div>
+      <section 
+        className="relative px-6 py-20 lg:py-32 overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/hero-bg.png')" }}
+      >
+        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] pointer-events-none"></div>
 
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-medium mb-6">
-            <Icon icon="solar:shield-check-linear" className="w-4 h-4 mr-2" />
-            Your Health Data, Secured.
+        <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 text-center lg:text-left">
+            <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-medium mb-6">
+              <Icon icon="solar:shield-check-linear" className="w-4 h-4 mr-2" />
+              Your Health Data, Secured.
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight mb-6">
+              Your Medical History,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
+                Finally in Your Control.
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+              A unified healthcare platform bringing patients and doctors together. Seamlessly manage appointments, health records, and AI-assisted care all in one place.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-8 py-3.5 rounded-full transition shadow-lg shadow-blue-600/20 flex items-center justify-center"
+              >
+                Create Free Account
+                <Icon icon="solar:alt-arrow-right-linear" className="w-5 h-5 ml-2" />
+              </button>
+              <Link
+                to="/doctors"
+                className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 text-base font-semibold px-8 py-3.5 rounded-full transition hover:bg-gray-50 flex items-center justify-center shadow-sm"
+              >
+                I'm a Healthcare Provider
+              </Link>
+            </div>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 tracking-tight leading-tight mb-8">
-            Your Medical History,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
-              Finally in Your Control.
-            </span>
-          </h1>
-          <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            A unified healthcare platform bringing patients and doctors together. Seamlessly manage appointments, health records, and AI-assisted care all in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-lg font-medium px-8 py-4 rounded-full transition shadow-lg shadow-blue-600/20 flex items-center justify-center"
-            >
-              Create Free Account
-              <Icon icon="solar:alt-arrow-right-linear" className="w-5 h-5 ml-2" />
-            </button>
-            <Link
-              to="/doctors"
-              className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 text-lg font-medium px-8 py-4 rounded-full transition hover:bg-gray-50 flex items-center justify-center"
-            >
-              I'm a Healthcare Provider
-            </Link>
+
+          <div className="lg:col-span-5 flex justify-center items-center relative">
+            <div className="relative w-72 sm:w-80 lg:w-96 group">
+              <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-2xl transform group-hover:scale-105 transition-transform duration-500"></div>
+              <img
+                src="/nurse-hero.png"
+                alt="Healthcare Virtual Support Nurse"
+                className="relative z-10 w-full h-auto drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+              />
+            </div>
           </div>
         </div>
       </section>
