@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Icon } from '@iconify/react';
-import { GoogleGenAI, Type } from '@google/genai';
 import type { AIChatSession, AIChatMessage } from '../../../types';
 
 interface Document {
@@ -142,8 +141,9 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
 
   const handleSend = async () => {
     if (!input.trim() && !pendingAttachment) return;
-    if (!import.meta.env.VITE_GEMINI_API_KEY) {
-      alert("Please set GEMINI_API_KEY in env");
+    const apiKey = import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_XAI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      alert("Please set VITE_GROK_API_KEY in your env file.");
       return;
     }
 
@@ -157,6 +157,8 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
       session = data;
       await saveMessage(data.id, 'model', "Hi! I'm your Swasth+ Virtual Health Assistant. I can help monitor your conditions, analyze uploaded reports, suggest home remedies, and prepare summaries for your doctor.");
     }
+    const activeSession = session;
+    if (!activeSession) return;
 
     const userMessage = input.trim();
     const currentAttachment = pendingAttachment;
@@ -193,68 +195,11 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
       }
       setUploadingFile(false);
 
-      await saveMessage(session.id, 'user', userMessage || 'Sent an attachment', false, attachmentUrl || undefined, attachmentName || undefined, attachmentType || undefined);
-
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-
-      const searchPatientHistoryTool = {
-        name: 'search_patient_history',
-        description: 'Search the patient\'s past medical documents based on a query to find relevant history.',
-        parameters: { type: Type.OBJECT, properties: { query: { type: Type.STRING, description: 'Medical keywords' } }, required: ['query'] }
-      };
-
-      const prepareContextTool = {
-        name: 'prepare_doctor_context',
-        description: 'Generate a highly concise, medical-grade summary of the patient\'s history tailored for the upcoming appointment.',
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            summary: { type: Type.STRING, description: 'The concise medical summary to share with the doctor.' },
-            relevant_doc_ids: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Array of document IDs that are relevant.' }
-          },
-          required: ['summary', 'relevant_doc_ids'],
-        }
-      };
-
-      const suggestRemediesTool = {
-        name: 'suggest_home_remedies',
-        description: 'Provide a list of safe home remedies and immediate care actions for mild conditions.',
-        parameters: { type: Type.OBJECT, properties: { condition: { type: Type.STRING } }, required: ['condition'] }
-      };
-
-      const findBestDoctorTool = {
-        name: 'find_best_doctor',
-        description: 'Find a list of available doctors and their specialties.',
-        parameters: { type: Type.OBJECT, properties: { symptoms: { type: Type.STRING, description: 'Symptoms or required specialty' } } }
-      };
-
-      const bookAppointmentTool = {
-        name: 'book_appointment',
-        description: 'Book an appointment with a specific doctor ID for a given date and time.',
-        parameters: {
-          type: Type.OBJECT,
-          properties: {
-            doctor_id: { type: Type.STRING },
-            date: { type: Type.STRING },
-            time: { type: Type.STRING },
-            remarks: { type: Type.STRING }
-          },
-          required: ['doctor_id', 'date', 'time']
-        }
-      };
+      await saveMessage(activeSession.id, 'user', userMessage || 'Sent an attachment', false, attachmentUrl || undefined, attachmentName || undefined, attachmentType || undefined);
 
       const docsString = documents.map(d => `ID: ${d.id} | Title: ${d.title} | Type: ${d.document_type} | Extracted Summary: ${d.extracted_text || 'None'} | Date: ${d.created_at}`).join('\n');
 
-      const chatHistoryForGemini = messages.map(m => ({
-        role: m.role === 'model' ? 'model' : 'user',
-        parts: [{ text: m.content + (m.attachment_name ? ` [Attached: ${m.attachment_name}]` : '') }]
-      }));
-
-      const chat = ai.chats.create({
-        model: 'gemini-3.6-flash',
-        history: chatHistoryForGemini as any,
-        config: {
-          systemInstruction: `You are Swasth+ Virtual Health Assistant. You act as an advanced AI health coordinator and companion for the patient. 
+      const systemPrompt = `You are Swasth+ Virtual Health Assistant. You act as an advanced AI health coordinator and companion for the patient. 
 Your capabilities:
 1. Monitor conditions and suggest home remedies (use suggest_home_remedies tool).
 2. Advise whether symptoms require an in-person doctor visit.
@@ -262,50 +207,168 @@ Your capabilities:
 4. Summarize medical history for doctors (MUST use prepare_doctor_context tool to output the final brief).
 5. Search past documents and book appointments.
 
-Patient's Document Index:\n${docsString}\n\nBe empathetic, concise, and professional. Always remind users to seek professional help for emergencies.`,
-          tools: [{ functionDeclarations: [searchPatientHistoryTool, prepareContextTool, suggestRemediesTool, findBestDoctorTool, bookAppointmentTool] }]
+Patient's Document Index:
+${docsString}
+
+Be empathetic, concise, and professional. Always remind users to seek professional help for emergencies.`;
+
+      const tools = [
+        {
+          type: 'function',
+          function: {
+            name: 'search_patient_history',
+            description: "Search the patient's past medical documents based on a query to find relevant history.",
+            parameters: {
+              type: 'object',
+              properties: { query: { type: 'string', description: 'Medical keywords' } },
+              required: ['query']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'prepare_doctor_context',
+            description: "Generate a highly concise, medical-grade summary of the patient's history tailored for the upcoming appointment.",
+            parameters: {
+              type: 'object',
+              properties: {
+                summary: { type: 'string', description: 'The concise medical summary to share with the doctor.' },
+                relevant_doc_ids: { type: 'array', items: { type: 'string' }, description: 'Array of document IDs that are relevant.' }
+              },
+              required: ['summary', 'relevant_doc_ids']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'suggest_home_remedies',
+            description: 'Provide a list of safe home remedies and immediate care actions for mild conditions.',
+            parameters: {
+              type: 'object',
+              properties: { condition: { type: 'string' } },
+              required: ['condition']
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'find_best_doctor',
+            description: 'Find a list of available doctors and their specialties.',
+            parameters: {
+              type: 'object',
+              properties: { symptoms: { type: 'string', description: 'Symptoms or required specialty' } }
+            }
+          }
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'book_appointment',
+            description: 'Book an appointment with a specific doctor ID for a given date and time.',
+            parameters: {
+              type: 'object',
+              properties: {
+                doctor_id: { type: 'string' },
+                date: { type: 'string' },
+                time: { type: 'string' },
+                remarks: { type: 'string' }
+              },
+              required: ['doctor_id', 'date', 'time']
+            }
+          }
+        }
+      ];
+
+      const formattedMessages: any[] = [
+        { role: 'system', content: systemPrompt }
+      ];
+
+      messages.forEach(m => {
+        if (m.role === 'user') {
+          formattedMessages.push({
+            role: 'user',
+            content: m.content + (m.attachment_name ? ` [Attached: ${m.attachment_name}]` : '')
+          });
+        } else if (m.role === 'model') {
+          formattedMessages.push({
+            role: 'assistant',
+            content: m.content
+          });
         }
       });
 
-      let aiMessageContent: any = userMessage || "Analyze this attached file.";
-      if (currentAttachment && base64data) {
-        aiMessageContent = [
-          { text: userMessage || "Analyze this attached file." },
-          { inlineData: { mimeType: attachmentType, data: base64data } }
+      let userContent: any = userMessage || "Analyze this attached file.";
+      if (currentAttachment && base64data && attachmentType.startsWith('image/')) {
+        userContent = [
+          { type: 'text', text: userMessage || "Analyze this attached image." },
+          { type: 'image_url', image_url: { url: `data:${attachmentType};base64,${base64data}` } }
         ];
       }
-      let response = await chat.sendMessage({ message: aiMessageContent });
+      formattedMessages.push({ role: 'user', content: userContent });
+
+      const grokModel = import.meta.env.VITE_GROK_MODEL || 'grok-2-latest';
+
+      const callGrok = async (apiMsgs: any[]) => {
+        const res = await fetch('https://api.xai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: grokModel,
+            messages: apiMsgs,
+            tools: tools,
+            temperature: 0.3
+          })
+        });
+        if (!res.ok) {
+          const errObj = await res.json().catch(() => ({}));
+          throw new Error(errObj?.error?.message || `Grok API returned status ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        return data.choices?.[0]?.message;
+      };
+
+      let responseMsg = await callGrok(formattedMessages);
       let finalSummary = '';
 
-      if (response.functionCalls && response.functionCalls.length > 0) {
-        for (const call of response.functionCalls) {
-          const args = (call.args as any) || {};
-          if (call.name === 'suggest_home_remedies') {
-            await saveMessage(session.id, 'system', `Fetching safe home remedies for ${args.condition}...`, true);
-            response = await chat.sendMessage({
-              message: [{ functionResponse: { name: 'suggest_home_remedies', response: { advice: "Drink fluids, rest, monitor fever." } } }] as any
-            });
+      let loopCount = 0;
+      while (responseMsg?.tool_calls && responseMsg.tool_calls.length > 0 && loopCount < 5) {
+        loopCount++;
+        formattedMessages.push(responseMsg);
+
+        for (const call of responseMsg.tool_calls) {
+          const fnName = call.function.name;
+          let args: any = {};
+          try {
+            args = JSON.parse(call.function.arguments || '{}');
+          } catch (e) {
+            console.error("Failed to parse tool call args", e);
           }
-          if (call.name === 'search_patient_history') {
-            await saveMessage(session.id, 'system', `Agent searched history for: "${args.query}"`, true);
-            response = await chat.sendMessage({
-              message: [{ functionResponse: { name: 'search_patient_history', response: { status: "Found relevant documents in index." } } }] as any
-            });
-          }
-          if (call.name === 'prepare_doctor_context') {
-            finalSummary = args.summary as string;
-            setRelevantDocIds((args.relevant_doc_ids as string[]) || []);
-            await saveMessage(session.id, 'system', `Agent prepared context summary.`, true);
-          }
-          if (call.name === 'find_best_doctor') {
-            await saveMessage(session.id, 'system', `Agent searched doctors for: "${args.symptoms}"`, true);
+
+          let resultData: any = {};
+
+          if (fnName === 'suggest_home_remedies') {
+            await saveMessage(activeSession.id, 'system', `Fetching safe home remedies for ${args.condition}...`, true);
+            resultData = { advice: "Drink fluids, rest, monitor fever." };
+          } else if (fnName === 'search_patient_history') {
+            await saveMessage(activeSession.id, 'system', `Agent searched history for: "${args.query}"`, true);
+            resultData = { status: "Found relevant documents in index." };
+          } else if (fnName === 'prepare_doctor_context') {
+            finalSummary = args.summary || '';
+            setRelevantDocIds(args.relevant_doc_ids || []);
+            await saveMessage(activeSession.id, 'system', `Agent prepared context summary.`, true);
+            resultData = { status: "Summary prepared successfully." };
+          } else if (fnName === 'find_best_doctor') {
+            await saveMessage(activeSession.id, 'system', `Agent searched doctors for: "${args.symptoms}"`, true);
             const docsList = doctors.map(d => `ID: ${d.id}, Name: ${d.full_name}, Specialty: ${d.specialty || 'General'}`).join('\n');
-            response = await chat.sendMessage({
-              message: [{ functionResponse: { name: 'find_best_doctor', response: { doctors: docsList } } }] as any
-            });
-          }
-          if (call.name === 'book_appointment') {
-            await saveMessage(session.id, 'system', `Agent booking appointment with ${args.doctor_id} for ${args.date} ${args.time}...`, true);
+            resultData = { doctors: docsList };
+          } else if (fnName === 'book_appointment') {
+            await saveMessage(activeSession.id, 'system', `Agent booking appointment with ${args.doctor_id} for ${args.date} ${args.time}...`, true);
             try {
               const { data: appt, error: apptError } = await supabase.from('appointments').insert([{
                 patient_id: patientId, doctor_id: args.doctor_id, appointment_date: args.date, appointment_time: args.time, remarks: args.remarks || 'Booked via AI', status: 'pending'
@@ -315,34 +378,42 @@ Patient's Document Index:\n${docsString}\n\nBe empathetic, concise, and professi
               await supabase.from('health_milestones').insert([{
                 patient_id: patientId, actor_id: patientId, title: `Appointment Booked via AI`, description: `You booked an appointment with ${docName} for ${args.date} at ${args.time}.`, milestone_type: 'appointment_booked', related_appointment_id: appt.id, status: 'completed'
               }]);
-              response = await chat.sendMessage({ message: [{ functionResponse: { name: 'book_appointment', response: { status: "Success", appointment_id: appt.id } } }] as any });
+              resultData = { status: "Success", appointment_id: appt.id };
             } catch (e: any) {
-              response = await chat.sendMessage({ message: [{ functionResponse: { name: 'book_appointment', response: { status: "Error", message: e.message } } }] as any });
+              resultData = { status: "Error", message: e.message };
             }
           }
+
+          formattedMessages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify(resultData)
+          });
         }
+
+        responseMsg = await callGrok(formattedMessages);
       }
 
-      if (response.text) {
-        await saveMessage(session.id, 'model', response.text);
+      if (responseMsg?.content) {
+        await saveMessage(activeSession.id, 'model', responseMsg.content);
       } else if (!finalSummary) {
-        await saveMessage(session.id, 'model', "I've processed your request.");
+        await saveMessage(activeSession.id, 'model', "I've processed your request.");
       }
 
       if (finalSummary) {
         setGeneratedBrief(finalSummary);
-        await saveMessage(session.id, 'model', "I have prepared the consultation brief for your doctor. Please review it below and authorize sharing.");
+        await saveMessage(activeSession.id, 'model', "I have prepared the consultation brief for your doctor. Please review it below and authorize sharing.");
       }
 
-      if (messages.length === 1 && session.title === 'New Consultation') {
+      if (messages.length === 1 && activeSession.title === 'New Consultation') {
         const title = userMessage.substring(0, 25) + "...";
-        await supabase.from('ai_chat_sessions').update({ title }).eq('id', session.id);
-        setSessions(prev => prev.map(s => s.id === session.id ? { ...s, title } : s));
+        await supabase.from('ai_chat_sessions').update({ title }).eq('id', activeSession.id);
+        setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, title } : s));
       }
 
     } catch (error: any) {
       console.error(error);
-      await saveMessage(session.id, 'model', "Error communicating with AI: " + error.message);
+      await saveMessage(activeSession.id, 'model', "Error communicating with AI: " + error.message);
     } finally {
       setLoading(false);
     }
