@@ -231,4 +231,4 @@ By design, all documents are protected by Supabase RLS. Doctors can only view do
 
 Built with ❤️ by **Team EliteDebuggers**.
 
-Distributed under the **MIT License**. See `LICENSE` for details.
+Distributed under the **GNU License**. See `LICENSE` for details.
