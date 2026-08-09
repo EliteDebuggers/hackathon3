@@ -159,8 +159,8 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-2/3 flex flex-col gap-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="lg:w-2/3 flex flex-col gap-6 w-full">
             <div className="flex justify-end">
               <button
                 onClick={() => setBookingModalOpen(true)}
@@ -255,7 +255,7 @@ export default function PatientDashboard() {
               </div>
             </div>
           </div>
-          <div className="lg:w-1/3">
+          <div className="lg:w-1/3 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] overflow-y-auto w-full no-scrollbar">
             <PatientAIAssistant patientId={userId} documents={documents} />
           </div>
         </div>

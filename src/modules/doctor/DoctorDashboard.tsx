@@ -214,10 +214,9 @@ export default function DoctorDashboard() {
 
   return (
     <SharedLayout role="doctor">
-      <div className="flex-1 w-full mx-auto p-6 flex gap-6">
+      <div className="flex-1 w-full mx-auto p-6 flex gap-6 items-start">
 
-        {/* Sidebar */}
-        <div className="w-1/3 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-[calc(100vh-8rem)] sticky top-24">
+        <div className="w-1/3 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-[calc(100vh-3rem)] sticky top-6">
           <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
             <h2 className="font-semibold text-gray-700 flex items-center">
               <Users className="w-5 h-5 mr-2 text-gray-500" />

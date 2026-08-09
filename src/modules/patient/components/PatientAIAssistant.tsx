@@ -247,7 +247,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-[600px]">
+    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-full">
       <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center">
         <h2 className="font-semibold flex items-center">
           <Sparkles className="w-5 h-5 mr-2" />
