@@ -5,6 +5,7 @@ import { Icon } from '@iconify/react';
 
 import SharedLayout from '../../components/SharedLayout';
 import DeleteDocumentModal from '../shared/DeleteDocumentModal';
+import { addLocalMedication } from '../../lib/medications';
 
 interface Patient {
   id: string;
@@ -42,6 +43,12 @@ export default function DoctorDashboard() {
   const [doctorId, setDoctorId] = useState('');
   const [uploadCategory, setUploadCategory] = useState('Doctor Prescription/Note');
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+
+  const [isPrescribeOpen, setIsPrescribeOpen] = useState(false);
+  const [prescName, setPrescName] = useState('');
+  const [prescDosage, setPrescDosage] = useState('');
+  const [prescTimeOfDay, setPrescTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'night'>('morning');
+  const [prescInstructions, setPrescInstructions] = useState('');
 
 
 
@@ -382,6 +389,14 @@ export default function DoctorDashboard() {
                     Records for Patient {selectedPatient.substring(0, 5)}
                   </h2>
                   <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsPrescribeOpen(true)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center transition shadow-md shadow-emerald-600/20"
+                    >
+                      <Icon icon="solar:pill-bold" className="w-4 h-4 mr-2" />
+                      Prescribe Medication
+                    </button>
+
                     <select
                       value={uploadCategory}
                       onChange={e => setUploadCategory(e.target.value)}
@@ -497,6 +512,124 @@ export default function DoctorDashboard() {
           setDocumentToDelete(null);
         }}
       />
+
+      {isPrescribeOpen && selectedPatient && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
+            <div className="flex justify-between items-center p-6 border-b bg-gray-50">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Icon icon="solar:pill-bold" className="w-6 h-6 text-emerald-600" />
+                Prescribe Medication to Patient
+              </h3>
+              <button onClick={() => setIsPrescribeOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <Icon icon="solar:close-circle-linear" className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!prescName || !prescDosage || !selectedPatient) return;
+
+                addLocalMedication(selectedPatient, {
+                  patient_id: selectedPatient,
+                  doctor_name: 'Dr. (Attending Specialist)',
+                  name: prescName,
+                  dosage: prescDosage,
+                  frequency: 'Daily',
+                  time_of_day: prescTimeOfDay,
+                  reminder_time: prescTimeOfDay === 'morning' ? '08:00' : prescTimeOfDay === 'afternoon' ? '14:00' : prescTimeOfDay === 'evening' ? '20:00' : '22:00',
+                  instructions: prescInstructions,
+                  status: 'active'
+                });
+
+                await supabase.from('health_milestones').insert([{
+                  patient_id: selectedPatient,
+                  actor_id: doctorId,
+                  title: `Doctor Prescribed ${prescName}`,
+                  description: `Prescribed ${prescName} (${prescDosage}) for ${prescTimeOfDay.toUpperCase()}. Instructions: ${prescInstructions}`,
+                  milestone_type: 'doctor_note',
+                  status: 'completed'
+                }]);
+
+                alert(`Prescription for ${prescName} assigned successfully to patient.`);
+                setIsPrescribeOpen(false);
+                setPrescName('');
+                setPrescDosage('');
+                setPrescInstructions('');
+              }}
+              className="p-6 space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Medication Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Amoxicillin 500mg"
+                  value={prescName}
+                  onChange={e => setPrescName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Dosage</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 1 Capsule"
+                    value={prescDosage}
+                    onChange={e => setPrescDosage(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Time Slot</label>
+                  <select
+                    value={prescTimeOfDay}
+                    onChange={e => setPrescTimeOfDay(e.target.value as any)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm bg-white"
+                  >
+                    <option value="morning">Morning (8 AM)</option>
+                    <option value="afternoon">Afternoon (2 PM)</option>
+                    <option value="evening">Evening (8 PM)</option>
+                    <option value="night">Night (10 PM)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Patient Instructions</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Take after meals with plenty of water for 7 days"
+                  value={prescInstructions}
+                  onChange={e => setPrescInstructions(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPrescribeOpen(false)}
+                  className="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 font-semibold text-sm transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-lg shadow-emerald-500/20"
+                >
+                  Assign Prescription
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </SharedLayout>
   );
 }

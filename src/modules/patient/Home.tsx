@@ -9,7 +9,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
+          <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-600 flex-shrink-0" />
           <span className="text-xl font-bold text-gray-900 tracking-tight">Swasth+</span>
         </div>
         <div className="flex items-center gap-6">
@@ -242,7 +242,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 text-white mb-6">
-              <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-400" />
+              <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-400 flex-shrink-0" />
               <span className="text-2xl font-bold tracking-tight">Swasth+</span>
             </div>
             <p className="text-gray-400 max-w-md leading-relaxed mb-6">

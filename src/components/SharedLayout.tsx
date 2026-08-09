@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLayoutContext } from './LayoutContext';
 import { Icon } from '@iconify/react';
@@ -15,6 +15,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { isChatbotOpen, toggleChatbot } = useLayoutContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,7 +39,9 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   };
 
   const patientLinks = [
-    { name: 'Dashboard', icon: 'solar:heart-pulse-linear', path: '/patient-dashboard' },
+    { name: 'Dashboard', icon: 'solar:heart-pulse-bold', path: '/patient-dashboard' },
+    { name: 'Medical Records', icon: 'solar:folder-with-files-bold', path: '/patient-records' },
+    { name: 'Medications', icon: 'solar:bell-bing-linear', path: '/patient-medications' },
     { name: 'Find Doctors', icon: 'solar:stethoscope-linear', path: '/patient-doctors' },
     { name: 'Appointments', icon: 'solar:calendar-linear', path: '/patient-appointments' },
     { name: 'Messages', icon: 'solar:chat-round-linear', path: '/patient-messages' },
@@ -57,7 +60,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
 
-      <header className="h-14 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 z-30 relative">
+      <header className="h-14 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 z-30 relative border-b border-gray-200/80">
         <div className="flex items-center">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -65,8 +68,8 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <Icon icon="solar:heart-pulse-linear" className="w-8 h-8 text-blue-600 flex-shrink-0" />
-          <span className="ml-3 font-bold text-xl text-gray-900 hidden sm:block">Swasth+</span>
+          <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-600 flex-shrink-0" />
+          <span className="ml-3 font-extrabold text-xl text-gray-900 hidden sm:block tracking-tight">Swasth+</span>
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">
@@ -75,7 +78,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
               onClick={toggleChatbot}
               className={`px-4 py-2 rounded-xl transition-all font-medium flex items-center ${isChatbotOpen
                 ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover: hover:opacity-90'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover:opacity-90'
                 }`}
               title="Toggle Swasth+"
             >
@@ -117,26 +120,35 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
 
       <div className="flex-1 flex flex-row overflow-hidden relative">
         <aside
-          className={`hidden md:flex flex-col bg-white -[1px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out z-20 h-full ${isExpanded ? 'w-64' : 'w-16'
+          className={`hidden md:flex flex-col bg-white border-r border-gray-200/80 transition-all duration-300 ease-in-out z-20 h-full ${isExpanded ? 'w-64' : 'w-16'
             }`}
         >
-          <nav className="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto">
-            {links.map((link, index) => (
-              <button
-                key={index}
-                onClick={() => link.path !== '#' && navigate(link.path)}
-                className="flex items-center px-3 py-3 rounded-md transition-colors text-gray-500 hover:text-blue-600 group shrink-0"
-                title={!isExpanded ? link.name : undefined}
-              >
-                <Icon icon={link.icon} className="w-6 h-6 flex-shrink-0 group-hover:text-blue-600 transition-colors" />
-                <span
-                  className={`ml-4 font-medium whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto translate-x-0' : 'opacity-0 w-0 -translate-x-4 overflow-hidden'
-                    }`}
+          <nav className="flex-1 py-4 flex flex-col gap-1.5 px-2 overflow-y-auto">
+            {links.map((link, index) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <button
+                  key={index}
+                  onClick={() => link.path !== '#' && navigate(link.path)}
+                  className={`flex items-center px-3 py-3 transition-all group shrink-0 ${
+                    isActive
+                      ? isExpanded
+                        ? 'bg-blue-50 text-blue-600 font-bold border-l-4 border-blue-600 shadow-sm rounded-r-xl'
+                        : 'text-blue-600 font-bold bg-transparent'
+                      : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-xl'
+                  }`}
+                  title={!isExpanded ? link.name : undefined}
                 >
-                  {link.name}
-                </span>
-              </button>
-            ))}
+                  <Icon icon={link.icon} className={`w-6 h-6 flex-shrink-0 transition-colors ${isActive ? 'text-blue-600 font-bold' : 'group-hover:text-blue-600'}`} />
+                  <span
+                    className={`ml-3 text-sm whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 w-auto translate-x-0' : 'opacity-0 w-0 -translate-x-4 overflow-hidden'
+                      }`}
+                  >
+                    {link.name}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
@@ -145,17 +157,22 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
         </main>
       </div>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white flex items-center justify-around h-16 px-2 z-50 -[0_-10px_20px_rgba(0,0,0,0.05)]">
-        {links.slice(0, 4).map((link, index) => (
-          <button
-            key={index}
-            onClick={() => link.path !== '#' && navigate(link.path)}
-            className="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            <Icon icon={link.icon} className="w-6 h-6 mb-1" />
-            <span className="text-[10px] font-medium">{link.name}</span>
-          </button>
-        ))}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around h-16 px-2 z-50">
+        {links.slice(0, 4).map((link, index) => {
+          const isActive = location.pathname === link.path;
+          return (
+            <button
+              key={index}
+              onClick={() => link.path !== '#' && navigate(link.path)}
+              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+                isActive ? 'text-blue-600 font-bold' : 'text-gray-400 hover:text-blue-600'
+              }`}
+            >
+              <Icon icon={link.icon} className="w-6 h-6 mb-1" />
+              <span className="text-[10px]">{link.name}</span>
+            </button>
+          );
+        })}
         {role === 'patient' && (
           <button
             onClick={toggleChatbot}

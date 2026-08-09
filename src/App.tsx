@@ -14,6 +14,10 @@ import DoctorSettings from './modules/doctor/Settings';
 import DoctorSchedule from './modules/doctor/Schedule';
 import DocumentView from './modules/shared/DocumentView';
 
+import PatientMedications from './modules/patient/Medications';
+import BookAppointment from './modules/patient/BookAppointment';
+import MedicalRecords from './modules/patient/MedicalRecords';
+
 function App() {
   return (
     <Router>
@@ -24,8 +28,11 @@ function App() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
+          <Route path="/patient-records" element={<MedicalRecords />} />
+          <Route path="/patient-medications" element={<PatientMedications />} />
           <Route path="/patient-doctors" element={<PatientDoctors />} />
           <Route path="/patient-appointments" element={<PatientAppointments />} />
+          <Route path="/book-appointment" element={<BookAppointment />} />
           <Route path="/patient-messages" element={<PatientMessages />} />
           <Route path="/patient-settings" element={<PatientSettings />} />
 

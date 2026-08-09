@@ -9,7 +9,7 @@ export default function DoctorLanding() {
  {/* Navbar (Dark Theme for Docs) */}
  <nav className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
  <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition">
- <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-500" />
+ <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-500" />
  <span className="text-xl font-bold text-white tracking-tight">Swasth+</span>
  </Link>
  <div className="flex items-center gap-6">

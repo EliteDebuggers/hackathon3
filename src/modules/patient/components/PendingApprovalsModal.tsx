@@ -11,7 +11,14 @@ interface PendingUpload {
  doctor_id: string;
 }
 
-export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { isOpen: boolean, onClose: () => void, patientId: string }) {
+interface PendingApprovalsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  patientId: string;
+  onApproved?: () => void;
+}
+
+export default function PendingApprovalsModal({ isOpen, onClose, patientId, onApproved }: PendingApprovalsModalProps) {
  const [pendingDocs, setPendingDocs] = useState<PendingUpload[]>([]);
  const [loading, setLoading] = useState(true);
 
@@ -59,6 +66,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
  }
 
  fetchPending();
+ onApproved?.();
  } catch (e: any) {
  alert("Error approving:" + e.message);
  }
@@ -68,6 +76,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
  try {
  await supabase.from('pending_document_uploads').update({ status: 'rejected' }).eq('id', doc.id);
  fetchPending();
+ onApproved?.();
  } catch (e: any) {
  alert("Error rejecting:" + e.message);
  }

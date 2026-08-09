@@ -74,7 +74,7 @@ export default function Login() {
  <div className="flex-1 flex items-center justify-center p-4">
  <div className="w-full max-w-md bg-white rounded-md border border-gray-100 p-8">
  <div className="flex items-center justify-center gap-2 mb-8">
- <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
+ <Icon icon="solar:heart-pulse-bold" className="w-8 h-8 text-blue-600 flex-shrink-0" />
  <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Swasth+</h1>
  </div>
 
