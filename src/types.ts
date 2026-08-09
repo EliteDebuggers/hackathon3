@@ -36,5 +36,8 @@ export interface AIChatMessage {
   role: 'user' | 'model' | 'system';
   content: string;
   is_tool_call: boolean;
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_type?: string;
   created_at: string;
 }

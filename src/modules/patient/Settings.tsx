@@ -4,13 +4,12 @@ import { supabase } from '../../lib/supabase';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
-export default function DoctorSettings() {
+export default function PatientSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [specialty, setSpecialty] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
   const navigate = useNavigate();
@@ -27,10 +26,9 @@ export default function DoctorSettings() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setEmail(user.email || '');
-      const { data } = await supabase.from('users').select('full_name, specialty').eq('id', user.id).single();
+      const { data } = await supabase.from('users').select('full_name').eq('id', user.id).single();
       if (data) {
         setFullName(data.full_name || '');
-        setSpecialty(data.specialty || '');
       }
     }
     setLoading(false);
@@ -45,11 +43,7 @@ export default function DoctorSettings() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      const { error: profileError } = await supabase.from('users').update({
-        full_name: fullName,
-        specialty: specialty
-      }).eq('id', user.id);
-
+      const { error: profileError } = await supabase.from('users').update({ full_name: fullName }).eq('id', user.id);
       if (profileError) throw profileError;
 
       if (newPassword) {
@@ -67,7 +61,7 @@ export default function DoctorSettings() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirm = window.confirm("Are you sure you want to delete your doctor account? All your sessions and data will be removed. This cannot be undone.");
+    const confirm = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
     if (!confirm) return;
 
     try {
@@ -83,13 +77,13 @@ export default function DoctorSettings() {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Professional Profile', icon: 'solar:user-circle-linear' },
+    { id: 'profile', label: 'Profile', icon: 'solar:user-circle-linear' },
     { id: 'security', label: 'Security', icon: 'solar:lock-password-linear' },
     { id: 'danger', label: 'Danger Zone', icon: 'solar:danger-triangle-linear' },
   ];
 
   return (
-    <SharedLayout role="doctor">
+    <SharedLayout role="patient">
       <div className="flex flex-col md:flex-row h-full w-full bg-gray-50">
 
         <div className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-gray-200 shrink-0 md:h-full z-10">
@@ -101,10 +95,10 @@ export default function DoctorSettings() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl whitespace-nowrap transition-all ${activeTab === tab.id
-                      ? tab.id === 'danger'
-                        ? 'bg-red-50 text-red-700'
-                        : 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? tab.id === 'danger'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <Icon icon={tab.icon} className={`w-6 h-6 shrink-0 ${activeTab === tab.id ? (tab.id === 'danger' ? 'text-red-600' : 'text-blue-600') : 'text-gray-400'}`} />
@@ -127,7 +121,7 @@ export default function DoctorSettings() {
                   <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-xl shadow-gray-200/40">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <Icon icon="solar:user-circle-linear" className="w-6 h-6 text-blue-600" />
-                      Professional Profile
+                      Profile Information
                     </h2>
 
                     {message.text && (
@@ -144,15 +138,9 @@ export default function DoctorSettings() {
                         <p className="text-xs text-gray-400 mt-2">Email cannot be changed.</p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
-                          <input type="text" value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="e.g. Cardiologist" className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
                       </div>
 
                       <div className="pt-4 border-t border-gray-100">
@@ -206,12 +194,12 @@ export default function DoctorSettings() {
                       Danger Zone
                     </h2>
                     <p className="text-gray-600 mb-8 max-w-2xl relative z-10">
-                      Once you delete your account, your profile and all scheduled sessions will be permanently removed from our servers. This cannot be undone.
+                      Once you delete your account, there is no going back. All your data, including appointments, messages, and profile information, will be permanently removed from our servers. Please be certain.
                     </p>
 
                     <button onClick={handleDeleteAccount} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 hover:border-red-600 font-medium px-6 py-3 rounded-xl transition-colors relative z-10 flex items-center gap-2">
                       <Icon icon="solar:trash-bin-trash-linear" className="w-5 h-5 shrink-0" />
-                      Delete Doctor Account
+                      Delete Account
                     </button>
                   </div>
                 )}

@@ -8,6 +8,7 @@ export default function Login() {
  const [isLogin, setIsLogin] = useState(true);
  const [email, setEmail] = useState('');
  const [password, setPassword] = useState('');
+ const [fullName, setFullName] = useState('');
  const [role, setRole] = useState<'patient' | 'doctor'>('patient');
  const [loading, setLoading] = useState(false);
  const [error, setError] = useState('');
@@ -46,7 +47,7 @@ export default function Login() {
  if (authData.user) {
  const { error: profileError } = await supabase
  .from('users')
- .insert([{ id: authData.user.id, role }]);
+ .insert([{ id: authData.user.id, role, full_name: fullName.trim() || null }]);
 
  if (profileError) throw profileError;
 
@@ -120,6 +121,20 @@ export default function Login() {
  </div>
  )}
 
+ {!isLogin && (
+ <div>
+ <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+ <input
+ type="text"
+ required
+ value={fullName}
+ onChange={(e) => setFullName(e.target.value)}
+ className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+ placeholder="Dr. Sarah Jenkins"
+ />
+ </div>
+ )}
+
  <div>
  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
  <input
@@ -136,11 +151,13 @@ export default function Login() {
  <input
  type="password"
  required
+ minLength={6}
  value={password}
  onChange={(e) => setPassword(e.target.value)}
  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
  placeholder="••••••••"
  />
+ {!isLogin && <p className="text-xs text-gray-400 mt-1">Minimum 6 characters.</p>}
  </div>
 
  <button

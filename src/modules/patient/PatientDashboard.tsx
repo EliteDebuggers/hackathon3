@@ -154,7 +154,7 @@ export default function PatientDashboard() {
  <div className={`flex-1 flex flex-col gap-4 w-full transition-all duration-300 ease-in-out p-3 md:p-4 ${isChatbotOpen ? 'lg:pr-4 mb-4 lg:mb-0' : ''}`}>
 
  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
- <div className="bg-white rounded-xl p-5 flex items-center transition-all hover:">
+ <div className="bg-white rounded-xl p-5 flex items-center transition-all border border-gray-100 shadow-lg shadow-gray-200/40 hover:shadow-xl hover:shadow-gray-200/60">
  <div className="p-3 bg-blue-100 text-blue-600 rounded-md mr-4">
  <Icon icon="solar:file-text-linear" className="w-6 h-6" />
  </div>
@@ -164,7 +164,7 @@ export default function PatientDashboard() {
  </div>
  </div>
 
- <div className="bg-white rounded-xl p-5 flex items-center transition-all hover:">
+ <div className="bg-white rounded-xl p-5 flex items-center transition-all border border-gray-100 shadow-lg shadow-gray-200/40 hover:shadow-xl hover:shadow-gray-200/60">
  <div className="p-3 bg-green-100 text-green-600 rounded-md mr-4">
  <Icon icon="solar:stethoscope-linear" className="w-6 h-6" />
  </div>
@@ -174,7 +174,7 @@ export default function PatientDashboard() {
  </div>
  </div>
 
- <div className="bg-white rounded-xl p-5 flex items-center transition-all hover:">
+ <div className="bg-white rounded-xl p-5 flex items-center transition-all border border-gray-100 shadow-lg shadow-gray-200/40 hover:shadow-xl hover:shadow-gray-200/60">
  <div className="p-3 bg-purple-100 text-purple-600 rounded-md mr-4">
  <Icon icon="solar:file-download-linear" className="w-6 h-6" />
  </div>
@@ -184,7 +184,7 @@ export default function PatientDashboard() {
  </div>
  </div>
 
- <div className="bg-white rounded-xl p-5 flex items-center transition-all hover:">
+ <div className="bg-white rounded-xl p-5 flex items-center transition-all border border-gray-100 shadow-lg shadow-gray-200/40 hover:shadow-xl hover:shadow-gray-200/60">
  <div className="p-3 bg-orange-100 text-orange-600 rounded-md mr-4">
  <Icon icon="solar:clock-circle-linear" className="w-6 h-6" />
  </div>
@@ -207,7 +207,7 @@ export default function PatientDashboard() {
 
  <HealthTimeline patientId={userId} />
 
- <div className="bg-white rounded-xl overflow-hidden">
+ <div className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-xl shadow-gray-200/40">
  <div className="flex flex-col md:flex-row md:justify-between md:items-center p-5 bg-gray-50/30 gap-4">
  <h2 className="text-xl font-semibold text-gray-800">Your Medical History</h2>
 
