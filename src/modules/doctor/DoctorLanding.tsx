@@ -10,7 +10,7 @@ export default function DoctorLanding() {
       <nav className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition">
           <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-500" />
-          <span className="text-xl font-bold text-white tracking-tight">HealthSync</span>
+          <span className="text-xl font-bold text-white tracking-tight">Swasth+</span>
         </Link>
         <div className="flex items-center gap-6">
           <Link to="/" className="hidden md:flex items-center text-sm font-medium text-slate-400 hover:text-white transition">
@@ -49,7 +49,7 @@ export default function DoctorLanding() {
             </span>
           </h1>
           <p className="text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Stop relying on patients to remember their medical history. HealthSync gives you instant access to a unified timeline of your patients' lab results, scans, and past prescriptions.
+            Stop relying on patients to remember their medical history. Swasth+ gives you instant access to a unified timeline of your patients' lab results, scans, and past prescriptions.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
@@ -105,10 +105,10 @@ export default function DoctorLanding() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-white">
             <Icon icon="solar:pulse-linear" className="w-6 h-6 text-blue-500" />
-            <span className="text-lg font-bold">HealthSync Providers</span>
+            <span className="text-lg font-bold">Swasth+ Providers</span>
           </div>
           <p className="text-slate-500 text-sm">
-            © 2026 HealthSync Platform. NYC CodeQuest Final Round.
+            © 2026 Swasth+ Platform. NYC CodeQuest Final Round.
           </p>
         </div>
       </footer>

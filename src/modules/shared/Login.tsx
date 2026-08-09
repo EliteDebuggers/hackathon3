@@ -74,7 +74,7 @@ export default function Login() {
         <div className="w-full max-w-md bg-white rounded-md shadow-xl border border-gray-100 p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">HealthSync</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Swasth+</h1>
           </div>
 
         <div className="flex gap-4 mb-8">

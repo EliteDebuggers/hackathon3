@@ -10,7 +10,7 @@ export default function Home() {
       <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
-          <span className="text-xl font-bold text-gray-900 tracking-tight">HealthSync</span>
+          <span className="text-xl font-bold text-gray-900 tracking-tight">Swasth+</span>
         </div>
         <div className="flex items-center gap-6">
           <Link to="/doctors" className="hidden md:flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
@@ -75,7 +75,7 @@ export default function Home() {
       <section className="px-6 py-24 bg-gray-50 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">How HealthSync Works</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">How Swasth+ Works</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">We've eliminated the friction of managing medical documents. It only takes three steps to take back control of your health records.</p>
           </div>
 
@@ -118,10 +118,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-gray-900">
             <Icon icon="solar:pulse-linear" className="w-6 h-6 text-blue-600" />
-            <span className="text-lg font-bold">HealthSync</span>
+            <span className="text-lg font-bold">Swasth+</span>
           </div>
           <p className="text-gray-500 text-sm">
-            © 2026 HealthSync Platform. Built for the Elite Debuggers Final Round.
+            © 2026 Swasth+ Platform. Built for the Elite Debuggers Final Round.
           </p>
         </div>
       </footer>

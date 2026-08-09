@@ -24,7 +24,7 @@ interface Message {
 
 export default function PatientAIAssistant({ patientId, documents }: { patientId: string, documents: Document[] }) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', content: "Hi! I'm your HealthSync AI Coordinator. Tell me about your upcoming appointment, and I will search your records to prepare a summary for your doctor." }
+    { role: 'model', content: "Hi! I'm your Swasth+ AI Coordinator. Tell me about your upcoming appointment, and I will search your records to prepare a summary for your doctor." }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

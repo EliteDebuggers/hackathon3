@@ -46,7 +46,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
               <Menu className="w-6 h-6" />
             </button>
             <Icon icon="solar:heart-pulse-linear" className="w-8 h-8 text-blue-600 flex-shrink-0" />
-            <span className="ml-3 font-bold text-xl text-gray-900 hidden sm:block">HealthSync</span>
+            <span className="ml-3 font-bold text-xl text-gray-900 hidden sm:block">Swasth+</span>
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
