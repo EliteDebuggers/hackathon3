@@ -134,20 +134,67 @@ export default function DoctorDashboard() {
         .from('medical-records')
         .getPublicUrl(filePath);
 
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert([
-          {
-            patient_id: selectedPatient,
-            doctor_id: doctorId,
-            uploader_id: doctorId,
-            title: file.name,
-            file_url: publicUrl,
-            document_type: uploadCategory,
-          }
-        ]);
+      const { data: activeAppts } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .eq('patient_id', selectedPatient)
+        .in('status', ['pending', 'confirmed'])
+        .limit(1);
 
-      if (dbError) throw dbError;
+      const hasActiveAppointment = activeAppts && activeAppts.length > 0;
+
+      if (hasActiveAppointment) {
+        const { error: dbError } = await supabase
+          .from('documents')
+          .insert([
+            {
+              patient_id: selectedPatient,
+              doctor_id: doctorId,
+              uploader_id: doctorId,
+              title: file.name,
+              file_url: publicUrl,
+              document_type: uploadCategory,
+            }
+          ]);
+        if (dbError) throw dbError;
+
+        await supabase.from('health_milestones').insert([{
+          patient_id: selectedPatient,
+          actor_id: doctorId,
+          title: `Doctor Uploaded Document`,
+          description: `Dr. uploaded a ${uploadCategory} (${file.name}) directly to your records.`,
+          milestone_type: 'doctor_note',
+          status: 'completed'
+        }]);
+
+        alert("Document uploaded directly to patient records due to active appointment.");
+      } else {
+        const { error: pendingError } = await supabase
+          .from('pending_document_uploads')
+          .insert([
+            {
+              patient_id: selectedPatient,
+              doctor_id: doctorId,
+              title: file.name,
+              file_url: publicUrl,
+              document_type: uploadCategory,
+              status: 'pending'
+            }
+          ]);
+        if (pendingError) throw pendingError;
+
+        await supabase.from('health_milestones').insert([{
+          patient_id: selectedPatient,
+          actor_id: doctorId,
+          title: `Pending Document Approval`,
+          description: `A doctor wants to add a ${uploadCategory} (${file.name}) to your records. Please approve it in your inbox.`,
+          milestone_type: 'action_required',
+          status: 'pending'
+        }]);
+
+        alert("No active appointment found. Document sent to patient for approval.");
+      }
 
       fetchDocuments(selectedPatient);
       fetchGlobalStats();

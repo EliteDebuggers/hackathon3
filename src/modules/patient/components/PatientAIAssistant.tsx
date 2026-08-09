@@ -13,6 +13,7 @@ interface Document {
 interface Doctor {
   id: string;
   full_name: string;
+  specialty?: string;
 }
 
 interface Message {
@@ -31,7 +32,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
   const [selectedDoctor, setSelectedDoctor] = useState('');
   const [generatedBrief, setGeneratedBrief] = useState('');
   const [relevantDocIds, setRelevantDocIds] = useState<string[]>([]);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
 
     try {
       const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-      
+
       const searchPatientHistoryTool = {
         name: 'search_patient_history',
         description: 'Search the patient\'s past medical documents based on a query to find relevant history.',
@@ -79,13 +80,39 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
           type: Type.OBJECT,
           properties: {
             summary: { type: Type.STRING, description: 'The concise medical summary to share with the doctor.' },
-            relevant_doc_ids: { 
-              type: Type.ARRAY, 
+            relevant_doc_ids: {
+              type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: 'Array of document IDs that are relevant.' 
+              description: 'Array of document IDs that are relevant.'
             }
           },
           required: ['summary', 'relevant_doc_ids'],
+        }
+      };
+
+      const findBestDoctorTool = {
+        name: 'find_best_doctor',
+        description: 'Find a list of available doctors and their specialties.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            symptoms: { type: Type.STRING, description: 'Symptoms or required specialty' }
+          }
+        }
+      };
+
+      const bookAppointmentTool = {
+        name: 'book_appointment',
+        description: 'Book an appointment with a specific doctor ID for a given date and time.',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            doctor_id: { type: Type.STRING, description: 'ID of the doctor' },
+            date: { type: Type.STRING, description: 'Date in YYYY-MM-DD format' },
+            time: { type: Type.STRING, description: 'Time in HH:MM format' },
+            remarks: { type: Type.STRING, description: 'Remarks or reason for visit' }
+          },
+          required: ['doctor_id', 'date', 'time']
         }
       };
 
@@ -95,14 +122,14 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
       const chat = ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-          systemInstruction: `You are an AI Health Coordinator. You help patients prepare for doctor appointments by finding relevant documents and summarizing them. \nHere is the patient's full document index:\n${docsString}\n\nUse the search_patient_history tool to pretend to search if asked. When you have enough context, MUST use the prepare_doctor_context tool to finalize the summary. DO NOT output the summary as normal text. ONLY use the prepare_doctor_context tool to output the summary.`,
-          tools: [{ functionDeclarations: [searchPatientHistoryTool, prepareContextTool] }]
+          systemInstruction: `You are an AI Health Coordinator. You help patients prepare for doctor appointments by finding relevant documents and summarizing them. You can also find doctors and book appointments for the patient. \nHere is the patient's full document index:\n${docsString}\n\nUse the search_patient_history tool to pretend to search if asked. When you have enough context, MUST use the prepare_doctor_context tool to finalize the summary. DO NOT output the summary as normal text. ONLY use the prepare_doctor_context tool to output the summary.\n\nUse find_best_doctor to get doctor options. Use book_appointment to book them.`,
+          tools: [{ functionDeclarations: [searchPatientHistoryTool, prepareContextTool, findBestDoctorTool, bookAppointmentTool] }]
         }
       });
 
       // Simple implementation of tool loop for hackathon
       let response = await chat.sendMessage({ message: userMessage });
-      
+
       let finalSummary = '';
 
       if (response.functionCalls && response.functionCalls.length > 0) {
@@ -110,15 +137,16 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
           if (call.name === 'search_patient_history') {
             const query = (call.args as any).query;
             setMessages(prev => [...prev, { role: 'system', content: `Agent searched history for: "${query}"`, isToolCall: true }]);
-            
+
             // Send mock tool response back
-            response = await chat.sendMessage({ 
-              message: [{ 
-                functionResponse: { name: 'search_patient_history', response: { status: "Found relevant documents in index." } } 
+            response = await chat.sendMessage({
+              message: [{
+                functionResponse: { name: 'search_patient_history', response: { status: "Found relevant documents in index." } }
               }] as any
             });
           }
-          
+
+
           if (response.functionCalls && response.functionCalls.some(c => c.name === 'prepare_doctor_context')) {
             const prepCall = response.functionCalls.find(c => c.name === 'prepare_doctor_context');
             if (prepCall) {
@@ -128,9 +156,59 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
               setMessages(prev => [...prev, { role: 'system', content: `Agent prepared context summary.`, isToolCall: true }]);
             }
           }
+
+          if (call.name === 'find_best_doctor') {
+            const query = (call.args as any).symptoms || '';
+            setMessages(prev => [...prev, { role: 'system', content: `Agent searched doctors for: "${query}"`, isToolCall: true }]);
+
+            const docsList = doctors.map(d => `ID: ${d.id}, Name: ${d.full_name}, Specialty: ${d.specialty || 'General'}`).join('\n');
+
+            response = await chat.sendMessage({
+              message: [{
+                functionResponse: { name: 'find_best_doctor', response: { doctors: docsList } }
+              }] as any
+            });
+          }
+
+          if (call.name === 'book_appointment') {
+            const args = call.args as any;
+            setMessages(prev => [...prev, { role: 'system', content: `Agent booking appointment with ${args.doctor_id} for ${args.date} ${args.time}...`, isToolCall: true }]);
+
+            try {
+              const { data: appt, error: apptError } = await supabase.from('appointments').insert([{
+                patient_id: patientId,
+                doctor_id: args.doctor_id,
+                appointment_date: args.date,
+                appointment_time: args.time,
+                remarks: args.remarks || 'Booked via AI',
+                status: 'pending'
+              }]).select().single();
+
+              if (apptError) throw apptError;
+
+              const docName = doctors.find(d => d.id === args.doctor_id)?.full_name || 'a Doctor';
+
+              await supabase.from('health_milestones').insert([{
+                patient_id: patientId,
+                actor_id: patientId,
+                title: `Appointment Booked via AI`,
+                description: `You booked an appointment with ${docName} for ${args.date} at ${args.time}.\nRemarks: ${args.remarks}`,
+                milestone_type: 'appointment_booked',
+                related_appointment_id: appt.id,
+                status: 'completed'
+              }]);
+
+              response = await chat.sendMessage({
+                message: [{ functionResponse: { name: 'book_appointment', response: { status: "Success", appointment_id: appt.id } } }] as any
+              });
+            } catch (e: any) {
+              response = await chat.sendMessage({
+                message: [{ functionResponse: { name: 'book_appointment', response: { status: "Error", message: e.message } } }] as any
+              });
+            }
+          }
         }
       } else {
-        // Fallback if it didn't use the tool
         setMessages(prev => [...prev, { role: 'model', content: response.text || "I couldn't process that properly." }]);
       }
 
@@ -157,7 +235,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
         appointment_context: generatedBrief,
         attached_document_ids: relevantDocIds
       }]);
-      
+
       if (error) throw error;
       alert("Successfully authorized! Your doctor will see this brief on their dashboard.");
       setGeneratedBrief('');
@@ -180,11 +258,10 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl p-3 flex gap-3 ${
-              msg.role === 'user' ? 'bg-blue-600 text-white' : 
-              msg.role === 'system' ? 'bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm' : 
-              'bg-white border text-gray-800 shadow-sm'
-            }`}>
+            <div className={`max-w-[80%] rounded-2xl p-3 flex gap-3 ${msg.role === 'user' ? 'bg-blue-600 text-white' :
+              msg.role === 'system' ? 'bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm' :
+                'bg-white border text-gray-800 shadow-sm'
+              }`}>
               {msg.role === 'model' && <Bot className="w-5 h-5 mt-0.5 text-blue-600 flex-shrink-0" />}
               {msg.role === 'system' && <Clock className="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0" />}
               <div>
@@ -214,17 +291,17 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
             <p className="text-sm text-gray-700 whitespace-pre-wrap mb-4">{generatedBrief}</p>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-gray-500 uppercase">Select Doctor to Authorize:</label>
-              <select 
-                value={selectedDoctor} 
+              <select
+                value={selectedDoctor}
                 onChange={e => setSelectedDoctor(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 <option value="">-- Choose a doctor --</option>
                 {doctors.map(d => (
-                  <option key={d.id} value={d.id}>Doctor {d.id.substring(0,8)}</option>
+                  <option key={d.id} value={d.id}>Doctor {d.id.substring(0, 8)}</option>
                 ))}
               </select>
-              <button 
+              <button
                 onClick={handleAuthorize}
                 disabled={!selectedDoctor || loading}
                 className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 rounded-lg flex items-center justify-center transition"

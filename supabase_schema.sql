@@ -3,6 +3,7 @@ create table public.users (
   id uuid references auth.users on delete cascade not null primary key,
   role text not null check (role in ('patient', 'doctor')),
   full_name text,
+  specialty text, -- Added for doctor specialty
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -60,3 +61,58 @@ create policy "Patients can view own briefs" on public.consultation_briefs for s
 create policy "Doctors can view authorized briefs" on public.consultation_briefs for select using (auth.uid() = authorized_doctor_id);
 -- Patients can insert briefs
 create policy "Patients can insert briefs" on public.consultation_briefs for insert with check (auth.uid() = patient_id);
+
+-- Create appointments table
+create table public.appointments (
+  id uuid default gen_random_uuid() primary key,
+  patient_id uuid references public.users(id) not null,
+  doctor_id uuid references public.users(id) not null,
+  appointment_date date not null,
+  appointment_time text not null,
+  status text not null default 'pending', -- pending, confirmed, completed, cancelled
+  remarks text,
+  shared_document_ids uuid[],
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS on appointments
+alter table public.appointments enable row level security;
+create policy "Patients can view own appointments" on public.appointments for select using (auth.uid() = patient_id);
+create policy "Doctors can view own appointments" on public.appointments for select using (auth.uid() = doctor_id);
+create policy "Patients can insert appointments" on public.appointments for insert with check (auth.uid() = patient_id);
+
+-- Create health_milestones table for Timeline tracking
+create table public.health_milestones (
+  id uuid default gen_random_uuid() primary key,
+  patient_id uuid references public.users(id) not null,
+  actor_id uuid references public.users(id), -- Who caused it (patient or doctor)
+  title text not null,
+  description text,
+  milestone_type text not null, -- appointment_booked, action_required, action_completed, doctor_note
+  related_appointment_id uuid references public.appointments(id),
+  status text not null default 'completed', -- pending, completed
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.health_milestones enable row level security;
+create policy "Patients can view own milestones" on public.health_milestones for select using (auth.uid() = patient_id);
+create policy "Patients can insert milestones" on public.health_milestones for insert with check (auth.uid() = patient_id);
+create policy "Doctors can insert milestones" on public.health_milestones for insert with check (true); -- simplify for hackathon
+create policy "Patients can update milestones" on public.health_milestones for update using (auth.uid() = patient_id);
+
+-- Create pending_document_uploads table
+create table public.pending_document_uploads (
+  id uuid default gen_random_uuid() primary key,
+  doctor_id uuid references public.users(id) not null,
+  patient_id uuid references public.users(id) not null,
+  title text not null,
+  file_url text not null,
+  document_type text not null,
+  status text not null default 'pending', -- pending, approved, rejected
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.pending_document_uploads enable row level security;
+create policy "Patients can view pending uploads" on public.pending_document_uploads for select using (auth.uid() = patient_id);
+create policy "Doctors can insert pending uploads" on public.pending_document_uploads for insert with check (auth.uid() = doctor_id);
+create policy "Patients can update pending uploads" on public.pending_document_uploads for update using (auth.uid() = patient_id);
