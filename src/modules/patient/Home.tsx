@@ -80,8 +80,8 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-              <div className="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6 transform -rotate-3">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+              <div className="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-md flex items-center justify-center mb-6 transform -rotate-3">
                 <ShieldCheck className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">1. Sign Up Securely</h3>
@@ -90,8 +90,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-              <div className="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-6 transform rotate-3">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+              <div className="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-md flex items-center justify-center mb-6 transform rotate-3">
                 <FileUp className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">2. Digitize Your Records</h3>
@@ -100,8 +100,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-              <div className="w-16 h-16 mx-auto bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 transform -rotate-3">
+            <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+              <div className="w-16 h-16 mx-auto bg-purple-100 text-purple-600 rounded-md flex items-center justify-center mb-6 transform -rotate-3">
                 <Share2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">3. Connect with Doctors</h3>

@@ -247,18 +247,18 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-full">
-      <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center">
+    <div className="bg-white overflow-hidden flex flex-col h-full">
+      <div className="p-3 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center">
         <h2 className="font-semibold flex items-center">
           <Sparkles className="w-5 h-5 mr-2" />
           AI Appointment Coordinator
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50/50">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl p-3 flex gap-3 ${msg.role === 'user' ? 'bg-blue-600 text-white' :
+            <div className={`max-w-[80%] rounded-md p-3 flex gap-3 ${msg.role === 'user' ? 'bg-blue-600 text-white' :
               msg.role === 'system' ? 'bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm' :
                 'bg-white border text-gray-800 shadow-sm'
               }`}>
@@ -272,7 +272,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white border rounded-2xl p-4 shadow-sm flex items-center gap-2">
+            <div className="bg-white border rounded-md p-3 shadow-sm flex items-center gap-2">
               <Bot className="w-5 h-5 text-gray-400 animate-pulse" />
               <span className="text-gray-500 text-sm animate-pulse">Agent is thinking...</span>
             </div>
@@ -282,8 +282,8 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
       </div>
 
       {generatedBrief && (
-        <div className="p-4 bg-blue-50 border-t border-blue-100 animate-fade-in">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-200 mb-4">
+        <div className="p-3 bg-blue-50 border-t border-blue-100 animate-fade-in">
+          <div className="bg-white p-3 rounded-md shadow-sm border border-blue-200 mb-3">
             <h3 className="font-semibold text-blue-900 flex items-center mb-2">
               <FileText className="w-4 h-4 mr-2" />
               Consultation Brief
@@ -294,7 +294,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
               <select
                 value={selectedDoctor}
                 onChange={e => setSelectedDoctor(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 <option value="">-- Choose a doctor --</option>
                 {doctors.map(d => (
@@ -304,7 +304,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
               <button
                 onClick={handleAuthorize}
                 disabled={!selectedDoctor || loading}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 rounded-lg flex items-center justify-center transition"
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 rounded-md flex items-center justify-center transition"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Authorize & Share
@@ -314,7 +314,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
         </div>
       )}
 
-      <div className="p-4 bg-white border-t">
+      <div className="p-3 bg-white border-t">
         <div className="flex relative">
           <input
             type="text"
@@ -322,13 +322,13 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="e.g. I have a cardiology appointment tomorrow..."
-            className="w-full bg-gray-100 border-transparent focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-200 rounded-full py-3 pl-4 pr-12 outline-none transition"
+            className="w-full bg-gray-100 border-transparent focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-200 rounded-md py-3 pl-4 pr-12 outline-none transition"
             disabled={loading}
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="absolute right-2 top-1.5 p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 transition"
+            className="absolute right-2 top-1.5 p-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
           >
             <Send className="w-4 h-4 m-0.5" />
           </button>

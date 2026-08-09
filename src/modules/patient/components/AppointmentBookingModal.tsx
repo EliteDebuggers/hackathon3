@@ -73,7 +73,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in">
+      <div className="bg-white rounded-md shadow-xl w-full max-w-lg overflow-hidden animate-fade-in">
         <div className="flex justify-between items-center p-6 border-b bg-gray-50/50">
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
             <Calendar className="w-6 h-6 mr-2 text-blue-600" />
@@ -92,7 +92,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
               <select
                 value={selectedDoctor}
                 onChange={e => setSelectedDoctor(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 <option value="">-- Choose a Specialist --</option>
                 {doctors.map(d => (
@@ -111,7 +111,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
                   type="date"
                   value={date}
                   onChange={e => setDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
                 />
               </div>
             </div>
@@ -123,7 +123,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
                   type="time"
                   value={time}
                   onChange={e => setTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                  className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
                 onChange={e => setRemarks(e.target.value)}
                 placeholder="Briefly describe your issue..."
                 rows={3}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none resize-none"
+                className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 bg-white focus:ring-2 focus:ring-blue-600 outline-none resize-none"
               ></textarea>
             </div>
           </div>
@@ -147,14 +147,14 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
         <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg font-medium text-gray-600 hover:bg-gray-200 transition"
+            className="px-5 py-2.5 rounded-md font-medium text-gray-600 hover:bg-gray-200 transition"
           >
             Cancel
           </button>
           <button
             onClick={handleBook}
             disabled={!selectedDoctor || !date || !time || loading}
-            className="px-5 py-2.5 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 flex items-center transition"
+            className="px-5 py-2.5 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 flex items-center transition"
           >
             {loading ? 'Booking...' : (
               <>

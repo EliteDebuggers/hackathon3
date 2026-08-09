@@ -216,7 +216,7 @@ export default function DoctorDashboard() {
     <SharedLayout role="doctor">
       <div className="flex-1 w-full mx-auto p-6 flex gap-6 items-start">
 
-        <div className="w-1/3 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-[calc(100vh-3rem)] sticky top-6">
+        <div className="w-1/3 bg-white rounded-md shadow-sm border overflow-hidden flex flex-col h-[calc(100vh-3rem)] sticky top-6">
           <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
             <h2 className="font-semibold text-gray-700 flex items-center">
               <Users className="w-5 h-5 mr-2 text-gray-500" />
@@ -273,8 +273,8 @@ export default function DoctorDashboard() {
           {!selectedPatient ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                <div className="bg-white rounded-md shadow-sm border p-6 flex items-center">
+                  <div className="p-3 bg-blue-100 text-blue-600 rounded-md mr-4">
                     <Users className="w-6 h-6" />
                   </div>
                   <div>
@@ -283,8 +283,8 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
-                  <div className="p-3 bg-green-100 text-green-600 rounded-lg mr-4">
+                <div className="bg-white rounded-md shadow-sm border p-6 flex items-center">
+                  <div className="p-3 bg-green-100 text-green-600 rounded-md mr-4">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
@@ -293,8 +293,8 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
-                  <div className="p-3 bg-orange-100 text-orange-600 rounded-lg mr-4">
+                <div className="bg-white rounded-md shadow-sm border p-6 flex items-center">
+                  <div className="p-3 bg-orange-100 text-orange-600 rounded-md mr-4">
                     <Clock className="w-6 h-6" />
                   </div>
                   <div>
@@ -306,7 +306,7 @@ export default function DoctorDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex-1">
+              <div className="bg-white rounded-md shadow-sm border overflow-hidden flex-1">
                 <div className="p-6 border-b bg-gray-50/50">
                   <h2 className="text-xl font-semibold text-gray-800">Recent Platform Activity</h2>
                 </div>
@@ -316,9 +316,9 @@ export default function DoctorDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {allDocuments.slice(0, 8).map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 transition">
+                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-md hover:bg-gray-50 transition">
                           <div className="flex items-center">
-                            <div className={`p-2 rounded-lg mr-4 ${doc.document_type.includes('Prescription') ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                            <div className={`p-2 rounded-md mr-4 ${doc.document_type.includes('Prescription') ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                               }`}>
                               <FileText className="w-5 h-5" />
                             </div>
@@ -344,8 +344,8 @@ export default function DoctorDashboard() {
             // PATIENT SPECIFIC VIEW
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
-                  <div className="p-3 bg-blue-100 text-blue-600 rounded-lg mr-4">
+                <div className="bg-white rounded-md shadow-sm border p-6 flex items-center">
+                  <div className="p-3 bg-blue-100 text-blue-600 rounded-md mr-4">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
@@ -353,8 +353,8 @@ export default function DoctorDashboard() {
                     <h3 className="text-2xl font-bold text-gray-900">{documents.length}</h3>
                   </div>
                 </div>
-                <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
-                  <div className="p-3 bg-purple-100 text-purple-600 rounded-lg mr-4">
+                <div className="bg-white rounded-md shadow-sm border p-6 flex items-center">
+                  <div className="p-3 bg-purple-100 text-purple-600 rounded-md mr-4">
                     <FilePlus className="w-6 h-6" />
                   </div>
                   <div>
@@ -366,7 +366,7 @@ export default function DoctorDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border overflow-hidden flex-1 flex flex-col">
+              <div className="bg-white rounded-md shadow-sm border overflow-hidden flex-1 flex flex-col">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center p-6 border-b bg-gray-50/50 gap-4">
                   <h2 className="text-xl font-bold text-gray-800">
                     Records for Patient {selectedPatient.substring(0, 5)}
@@ -375,7 +375,7 @@ export default function DoctorDashboard() {
                     <select
                       value={uploadCategory}
                       onChange={e => setUploadCategory(e.target.value)}
-                      className="border-gray-300 border rounded-lg px-3 py-2 text-sm bg-white text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="border-gray-300 border rounded-md px-3 py-2 text-sm bg-white text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       disabled={uploading}
                     >
                       <option value="Doctor Prescription/Note">Prescription / Note</option>
@@ -393,7 +393,7 @@ export default function DoctorDashboard() {
                       />
                       <label
                         htmlFor="doctor-upload"
-                        className={`cursor-pointer text-white px-4 py-2 rounded-lg font-medium flex items-center transition shadow-sm ${uploading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                        className={`cursor-pointer text-white px-4 py-2 rounded-md font-medium flex items-center transition shadow-sm ${uploading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
                           }`}
                       >
                         <Upload className="w-4 h-4 mr-2" />
@@ -412,7 +412,7 @@ export default function DoctorDashboard() {
                       </h3>
                       <div className="grid gap-4">
                         {briefs.map(brief => (
-                          <div key={brief.id} className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
+                          <div key={brief.id} className="bg-indigo-50 border border-indigo-100 rounded-md p-4 shadow-sm">
                             <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">
                               Authorized Context • {new Date(brief.created_at).toLocaleDateString()}
                             </div>
@@ -424,7 +424,7 @@ export default function DoctorDashboard() {
                   )}
 
                   {documents.length === 0 ? (
-                    <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                    <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-md bg-gray-50">
                       <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-1">No records found</h3>
                       <p>This patient doesn't have any medical records yet.</p>
@@ -432,9 +432,9 @@ export default function DoctorDashboard() {
                   ) : (
                     <div className="grid gap-4">
                       {documents.map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-blue-50/50 hover:border-blue-200 transition group">
+                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-md hover:bg-blue-50/50 hover:border-blue-200 transition group">
                           <div className="flex items-center">
-                            <div className={`p-3 rounded-lg mr-4 ${doc.uploader_id === doctorId ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                            <div className={`p-3 rounded-md mr-4 ${doc.uploader_id === doctorId ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                               }`}>
                               <FileText className="w-6 h-6" />
                             </div>
@@ -451,7 +451,7 @@ export default function DoctorDashboard() {
                           </div>
                           <button
                             onClick={() => openDocument(doc)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-semibold bg-white border border-blue-200 hover:border-blue-300 px-4 py-2 rounded-lg transition shadow-sm"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-semibold bg-white border border-blue-200 hover:border-blue-300 px-4 py-2 rounded-md transition shadow-sm"
                           >
                             View
                           </button>

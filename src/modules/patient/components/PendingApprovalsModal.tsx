@@ -77,7 +77,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in">
+      <div className="bg-white rounded-md shadow-xl w-full max-w-lg overflow-hidden animate-fade-in">
         <div className="flex justify-between items-center p-6 border-b bg-gray-50/50">
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
             Pending Approvals
@@ -95,10 +95,10 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
           ) : (
             <div className="space-y-4">
               {pendingDocs.map(doc => (
-                <div key={doc.id} className="border rounded-xl p-4 flex flex-col gap-3 bg-gray-50">
+                <div key={doc.id} className="border rounded-md p-4 flex flex-col gap-3 bg-gray-50">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                      <div className="p-2 bg-blue-100 text-blue-600 rounded-md">
                         <FileText className="w-5 h-5" />
                       </div>
                       <div>
@@ -110,19 +110,19 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => window.open(doc.file_url, '_blank')}
-                      className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                      className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleReject(doc)}
-                      className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                      className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition"
                     >
                       Reject
                     </button>
                     <button
                       onClick={() => handleApprove(doc)}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 flex items-center rounded-lg transition"
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 flex items-center rounded-md transition"
                     >
                       <Check className="w-4 h-4 mr-1" />
                       Approve

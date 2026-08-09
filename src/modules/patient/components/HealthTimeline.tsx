@@ -56,7 +56,7 @@ export default function HealthTimeline({ patientId }: { patientId: string }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6">
+    <div className="bg-white rounded-md shadow-sm border p-6">
       <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
         <Activity className="w-6 h-6 mr-2 text-indigo-600" />
         Your Health Journey
@@ -98,7 +98,7 @@ export default function HealthTimeline({ patientId }: { patientId: string }) {
               {m.status === 'pending' && m.milestone_type === 'action_required' && (
                 <button 
                   onClick={() => setApprovalsOpen(true)}
-                  className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition"
+                  className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition"
                 >
                   Review Pending Approvals
                 </button>

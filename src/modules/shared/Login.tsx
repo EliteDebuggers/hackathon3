@@ -71,7 +71,7 @@ export default function Login() {
       </div>
       
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="w-full max-w-md bg-white rounded-md shadow-xl border border-gray-100 p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Activity className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">HealthSync</h1>
@@ -93,7 +93,7 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm">
             {error}
           </div>
         )}
@@ -104,7 +104,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setRole('patient')}
-                className={`flex flex-col items-center p-4 border rounded-xl ${role === 'patient' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-4 border rounded-md ${role === 'patient' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
               >
                 <UserCircle className={`w-8 h-8 mb-2 ${role === 'patient' ? 'text-blue-600' : 'text-gray-400'}`} />
                 <span className={`font-medium ${role === 'patient' ? 'text-blue-600' : 'text-gray-600'}`}>Patient</span>
@@ -112,7 +112,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setRole('doctor')}
-                className={`flex flex-col items-center p-4 border rounded-xl ${role === 'doctor' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
+                className={`flex flex-col items-center p-4 border rounded-md ${role === 'doctor' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
               >
                 <Stethoscope className={`w-8 h-8 mb-2 ${role === 'doctor' ? 'text-blue-600' : 'text-gray-400'}`} />
                 <span className={`font-medium ${role === 'doctor' ? 'text-blue-600' : 'text-gray-600'}`}>Doctor</span>
@@ -127,7 +127,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
               placeholder="you@example.com"
             />
           </div>
@@ -138,7 +138,7 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -146,7 +146,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full bg-blue-600 text-white font-medium py-3 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
           >
             {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
           </button>

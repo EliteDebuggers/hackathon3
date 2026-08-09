@@ -67,8 +67,8 @@ export default function DoctorLanding() {
       <section className="px-6 py-24 bg-slate-800/50 border-y border-slate-800">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-slate-600 transition">
-              <div className="w-14 h-14 bg-blue-900/50 text-blue-400 rounded-xl flex items-center justify-center mb-6">
+            <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
+              <div className="w-14 h-14 bg-blue-900/50 text-blue-400 rounded-md flex items-center justify-center mb-6">
                 <Search className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Instant Patient Context</h3>
@@ -77,8 +77,8 @@ export default function DoctorLanding() {
               </p>
             </div>
 
-            <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-slate-600 transition">
-              <div className="w-14 h-14 bg-indigo-900/50 text-indigo-400 rounded-xl flex items-center justify-center mb-6">
+            <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
+              <div className="w-14 h-14 bg-indigo-900/50 text-indigo-400 rounded-md flex items-center justify-center mb-6">
                 <FileSignature className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Direct Prescriptions</h3>
@@ -87,8 +87,8 @@ export default function DoctorLanding() {
               </p>
             </div>
 
-            <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-slate-600 transition">
-              <div className="w-14 h-14 bg-emerald-900/50 text-emerald-400 rounded-xl flex items-center justify-center mb-6">
+            <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
+              <div className="w-14 h-14 bg-emerald-900/50 text-emerald-400 rounded-md flex items-center justify-center mb-6">
                 <Activity className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Global Dashboard</h3>

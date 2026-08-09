@@ -12,7 +12,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  ChevronLeft,
   HeartPulse,
   BotMessageSquare
 } from 'lucide-react';
@@ -49,11 +48,11 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   return (
       <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
 
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shrink-0 z-30 relative shadow-sm">
+        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shrink-0 z-30 relative shadow-sm">
           <div className="flex items-center">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 rounded-lg text-gray-500 hover:text-blue-600 transition-colors mr-2 hidden md:block"
+              className="p-2 rounded-md text-gray-500 hover:text-blue-600 transition-colors mr-2 hidden md:block"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -65,10 +64,10 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
             {role === 'patient' && (
               <button 
                 onClick={toggleChatbot}
-                className={`px-4 py-2 rounded-xl transition-all font-medium flex items-center shadow-sm border ${
+                className={`px-4 py-2 rounded-md transition-all font-medium flex items-center shadow-sm border ${
                   isChatbotOpen 
-                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                    : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent hover:shadow-md hover:opacity-90'
                 }`}
                 title="Toggle AI Assistant"
               >
@@ -88,7 +87,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
 
         <div className="flex-1 flex flex-row overflow-hidden relative">
           <aside
-            className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-20 h-full ${isExpanded ? 'w-64' : 'w-20'
+            className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out z-20 h-full ${isExpanded ? 'w-64' : 'w-16'
               }`}
           >
             <nav className="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto">
@@ -96,7 +95,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
                 <button
                   key={index}
                   onClick={() => link.path !== '#' && navigate(link.path)}
-                  className="flex items-center px-3 py-3 rounded-xl transition-colors text-gray-500 hover:text-blue-600 group shrink-0"
+                  className="flex items-center px-3 py-3 rounded-md transition-colors text-gray-500 hover:text-blue-600 group shrink-0"
                   title={!isExpanded ? link.name : undefined}
                 >
                   <link.icon className="w-6 h-6 flex-shrink-0 group-hover:text-blue-600 transition-colors" />

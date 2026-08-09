@@ -27,11 +27,11 @@ export default function DocumentViewerModal({ isOpen, onClose, document }: Docum
     
     if (type === 'image') {
       return (
-        <div className="flex items-center justify-center w-full h-full bg-gray-100 rounded-lg">
+        <div className="flex items-center justify-center w-full h-full bg-gray-100 rounded-md">
           <img 
             src={document.file_url} 
             alt={document.title} 
-            className="max-w-full max-h-full object-contain rounded-lg"
+            className="max-w-full max-h-full object-contain rounded-md"
           />
         </div>
       );
@@ -41,7 +41,7 @@ export default function DocumentViewerModal({ isOpen, onClose, document }: Docum
       return (
         <iframe 
           src={document.file_url} 
-          className="w-full h-full rounded-lg border-0 bg-white" 
+          className="w-full h-full rounded-md border-0 bg-white" 
           title={document.title} 
         />
       );
@@ -52,7 +52,7 @@ export default function DocumentViewerModal({ isOpen, onClose, document }: Docum
     return (
       <iframe 
         src={officeUrl} 
-        className="w-full h-full rounded-lg border-0 bg-white" 
+        className="w-full h-full rounded-md border-0 bg-white" 
         title={document.title} 
       />
     );
@@ -60,7 +60,7 @@ export default function DocumentViewerModal({ isOpen, onClose, document }: Docum
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-6">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-md shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
