@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Icon } from '@iconify/react';
+import { getSimulationSettings, getOfflineAIResponse, addLog } from '../../../lib/resilience';
 import type { AIChatSession, AIChatMessage } from '../../../types';
 
 interface Document {
@@ -141,9 +142,10 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
 
   const handleSend = async () => {
     if (!input.trim() && !pendingAttachment) return;
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_XAI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+    const localApiKey = localStorage.getItem('swasth_ai_api_key');
+    const apiKey = localApiKey || import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GROK_API_KEY || import.meta.env.VITE_XAI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      alert("Please set VITE_GROQ_API_KEY in your .env.local file.");
+      alert("Please set VITE_GROQ_API_KEY in your .env.local file or configure it in Settings.");
       return;
     }
 
@@ -309,10 +311,11 @@ Be empathetic, concise, and professional. Always remind users to seek profession
       }
       formattedMessages.push({ role: 'user', content: userContent });
 
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-      const isGroq = !!groqKey || (apiKey && apiKey.startsWith('gsk_'));
+      const localModel = localStorage.getItem('swasth_ai_model');
+      const groqKey = localStorage.getItem('swasth_ai_api_key') || import.meta.env.VITE_GROQ_API_KEY;
+      const isGroq = localModel ? localModel.includes('llama') : (!!groqKey || (apiKey && apiKey.startsWith('gsk_')));
       const apiEndpoint = isGroq ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.xai.com/v1/chat/completions';
-      const aiModel = isGroq ? (import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile') : (import.meta.env.VITE_GROK_MODEL || 'grok-2-latest');
+      const aiModel = localModel || (isGroq ? (import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile') : (import.meta.env.VITE_GROK_MODEL || 'grok-2-latest'));
 
       const callGrok = async (apiMsgs: any[]) => {
         const res = await fetch(apiEndpoint, {
@@ -336,7 +339,25 @@ Be empathetic, concise, and professional. Always remind users to seek profession
         return data.choices?.[0]?.message;
       };
 
-      let responseMsg = await callGrok(formattedMessages);
+      let responseMsg: any = null;
+      const isOfflineMode = getSimulationSettings().simulateAiError || !navigator.onLine || getSimulationSettings().simulateOffline;
+
+      if (isOfflineMode) {
+        addLog("AI assistant simulated offline. Triggering offline rule-based triage.");
+        responseMsg = {
+          content: getOfflineAIResponse(userMessage)
+        };
+      } else {
+        try {
+          responseMsg = await callGrok(formattedMessages);
+        } catch (e: any) {
+          addLog(`AI API call failed (${e.message}). Falling back to Offline Triage Mode.`);
+          responseMsg = {
+            content: getOfflineAIResponse(userMessage) + `\n\n*(Note: Operates in offline mode due to AI service issue: ${e.message})*`
+          };
+        }
+      }
+
       let finalSummary = '';
 
       let loopCount = 0;
@@ -394,7 +415,12 @@ Be empathetic, concise, and professional. Always remind users to seek profession
           });
         }
 
-        responseMsg = await callGrok(formattedMessages);
+        try {
+          responseMsg = await callGrok(formattedMessages);
+        } catch (e: any) {
+          addLog(`Subsequent AI API call in loop failed: ${e.message}`);
+          responseMsg = { content: "AI session degraded mid-turn. Please try again later." };
+        }
       }
 
       if (responseMsg?.content) {

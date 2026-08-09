@@ -12,6 +12,9 @@ export default function PatientSettings() {
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('llama-3.1-8b-instant');
+  const [defaultApiKeySet, setDefaultApiKeySet] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +23,16 @@ export default function PatientSettings() {
 
   useEffect(() => {
     fetchProfile();
+    const savedKey = localStorage.getItem('swasth_ai_api_key') || '';
+    setCustomApiKey(savedKey);
+    const savedModel = localStorage.getItem('swasth_ai_model') || 'llama-3.1-8b-instant';
+    setSelectedModel(savedModel);
+    setDefaultApiKeySet(
+      !!import.meta.env.VITE_GROQ_API_KEY ||
+      !!import.meta.env.VITE_GROK_API_KEY ||
+      !!import.meta.env.VITE_XAI_API_KEY ||
+      !!import.meta.env.VITE_GEMINI_API_KEY
+    );
   }, []);
 
   const fetchProfile = async () => {
@@ -76,9 +89,29 @@ export default function PatientSettings() {
     }
   };
 
+  const handleSaveAISettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage({ text: '', type: '' });
+    try {
+      if (customApiKey.trim()) {
+        localStorage.setItem('swasth_ai_api_key', customApiKey.trim());
+      } else {
+        localStorage.removeItem('swasth_ai_api_key');
+      }
+      localStorage.setItem('swasth_ai_model', selectedModel);
+      setMessage({ text: 'AI configuration saved locally!', type: 'success' });
+    } catch (err: any) {
+      setMessage({ text: err.message || 'Failed to save configuration', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: 'solar:user-circle-linear' },
     { id: 'security', label: 'Security', icon: 'solar:lock-password-linear' },
+    { id: 'ai', label: 'AI Settings', icon: 'solar:cpu-bold' },
     { id: 'danger', label: 'Danger Zone', icon: 'solar:danger-triangle-linear' },
   ];
 
@@ -178,6 +211,58 @@ export default function PatientSettings() {
                         <button type="submit" disabled={saving || !newPassword} className="bg-gray-900 hover:bg-black text-white font-medium px-8 py-3 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
                           {saving && <Icon icon="solar:spinner-broken-linear" className="w-4 h-4 animate-spin" />}
                           Update Password
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {activeTab === 'ai' && (
+                  <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-xl shadow-gray-200/40">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                      <Icon icon="solar:cpu-bold" className="w-6 h-6 text-blue-600" />
+                      AI Engine Configuration
+                    </h2>
+
+                    {message.text && (
+                      <div className={`p-4 rounded-xl mb-6 flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                        <Icon icon={message.type === 'success' ? 'solar:check-circle-bold' : 'solar:danger-circle-bold'} className="w-5 h-5 shrink-0" />
+                        {message.text}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSaveAISettings} className="space-y-6 max-w-2xl">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Custom AI API Key (Groq / Grok)</label>
+                        <input 
+                          type="password" 
+                          value={customApiKey} 
+                          onChange={e => setCustomApiKey(e.target.value)} 
+                          placeholder={defaultApiKeySet ? "•••••••••••••••• (Default key set in env)" : "Enter custom API key"} 
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" 
+                        />
+                        <p className="text-xs text-gray-400 mt-2">
+                          Provides a local key override. This key remains securely in your browser's local cache.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Preferred AI Inference Model</label>
+                        <select 
+                          value={selectedModel} 
+                          onChange={e => setSelectedModel(e.target.value)} 
+                          className="w-full border border-gray-200 bg-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        >
+                          <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Fast / Groq)</option>
+                          <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Smart / Groq)</option>
+                          <option value="grok-2-latest">grok-2-latest (Smart / xAI Grok)</option>
+                        </select>
+                      </div>
+
+                      <div className="pt-4 border-t border-gray-100">
+                        <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-xl transition-colors flex items-center gap-2">
+                          {saving && <Icon icon="solar:spinner-broken-linear" className="w-4 h-4 animate-spin" />}
+                          Save AI Settings
                         </button>
                       </div>
                     </form>

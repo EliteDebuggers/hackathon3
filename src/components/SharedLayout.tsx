@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import { useLayoutContext } from './LayoutContext';
 import { Icon } from '@iconify/react';
 import { Menu } from 'lucide-react';
+import ResilienceHUD from '../modules/shared/ResilienceHUD';
+import { subscribeToResilience, getSimulationSettings } from '../lib/resilience';
+
 
 interface SharedLayoutProps {
   children: React.ReactNode;
@@ -29,6 +32,35 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
   const [isPatientNotifOpen, setIsPatientNotifOpen] = useState(false);
   const patientNotifRef = useRef<HTMLDivElement>(null);
 
+  const [resState, setResState] = useState({
+    offline: !navigator.onLine || getSimulationSettings().simulateOffline,
+    dbDown: getSimulationSettings().simulateDbError,
+  });
+
+  useEffect(() => {
+    const handleNetwork = () => {
+      setResState(prev => ({
+        ...prev,
+        offline: !navigator.onLine || getSimulationSettings().simulateOffline
+      }));
+    };
+    window.addEventListener('online', handleNetwork);
+    window.addEventListener('offline', handleNetwork);
+
+    const unsubscribe = subscribeToResilience(() => {
+      setResState({
+        offline: !navigator.onLine || getSimulationSettings().simulateOffline,
+        dbDown: getSimulationSettings().simulateDbError,
+      });
+    });
+
+    return () => {
+      window.removeEventListener('online', handleNetwork);
+      window.removeEventListener('offline', handleNetwork);
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -52,7 +84,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
           fetchPendingAppointments();
         })
         .subscribe();
-      
+
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
         subscription.unsubscribe();
@@ -227,11 +259,10 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
                             }}
                             className="w-full text-left p-3 hover:bg-gray-50 rounded-xl transition flex gap-3 items-start border border-transparent hover:border-gray-100"
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                              alert.milestone_type === 'doctor_note' ? 'bg-violet-100 text-violet-600' :
-                              alert.milestone_type === 'action_required' ? 'bg-amber-100 text-amber-600' :
-                              'bg-blue-100 text-blue-600'
-                            }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${alert.milestone_type === 'doctor_note' ? 'bg-violet-100 text-violet-600' :
+                                alert.milestone_type === 'action_required' ? 'bg-amber-100 text-amber-600' :
+                                  'bg-blue-100 text-blue-600'
+                              }`}>
                               <Icon icon={alert.milestone_type === 'doctor_note' ? 'solar:letter-bold' : alert.milestone_type === 'action_required' ? 'solar:danger-triangle-bold' : 'solar:calendar-bold'} className="w-4 h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -373,6 +404,22 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
         </div>
       </header>
 
+      {(resState.offline || resState.dbDown) && (
+        <div className="bg-amber-500 text-white text-xs font-bold px-4 py-2.5 flex items-center justify-between shadow-inner select-none shrink-0 z-30">
+          <div className="flex items-center gap-2">
+            <Icon icon="solar:shield-warning-bold animate-pulse" className="w-4.5 h-4.5 shrink-0" />
+            <span>
+              {resState.offline
+                ? "Operating in Offline Triage Mode. Features will cache data and auto-sync when network is back."
+                : "Database cluster is unreachable. Running in local fallback/cached mode."}
+            </span>
+          </div>
+          <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase shrink-0">
+            Degraded Mode
+          </span>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-row overflow-hidden relative">
         <aside
           className={`hidden md:flex flex-col bg-white border-r border-gray-200/80 transition-all duration-300 ease-in-out z-20 h-full ${isExpanded ? 'w-64' : 'w-16'
@@ -385,13 +432,12 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
                 <button
                   key={index}
                   onClick={() => link.path !== '#' && navigate(link.path)}
-                  className={`flex items-center px-3 py-3 transition-all group shrink-0 ${
-                    isActive
+                  className={`flex items-center px-3 py-3 transition-all group shrink-0 ${isActive
                       ? isExpanded
                         ? 'bg-blue-50 text-blue-600 font-bold border-l-4 border-blue-600 shadow-sm rounded-r-xl'
                         : 'text-blue-600 font-bold bg-transparent'
                       : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-xl'
-                  }`}
+                    }`}
                   title={!isExpanded ? link.name : undefined}
                 >
                   <Icon icon={link.icon} className={`w-6 h-6 flex-shrink-0 transition-colors ${isActive ? 'text-blue-600 font-bold' : 'group-hover:text-blue-600'}`} />
@@ -419,9 +465,8 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
             <button
               key={index}
               onClick={() => link.path !== '#' && navigate(link.path)}
-              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
-                isActive ? 'text-blue-600 font-bold' : 'text-gray-400 hover:text-blue-600'
-              }`}
+              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${isActive ? 'text-blue-600 font-bold' : 'text-gray-400 hover:text-blue-600'
+                }`}
             >
               <Icon icon={link.icon} className="w-6 h-6 mb-1" />
               <span className="text-[10px]">{link.name}</span>
@@ -439,6 +484,7 @@ export default function SharedLayout({ children, role }: SharedLayoutProps) {
           </button>
         )}
       </nav>
+      <ResilienceHUD />
     </div>
   );
 }

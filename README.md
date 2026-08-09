@@ -1,232 +1,180 @@
 # Swasth+ (Swasth)
 
 [![React 19](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![TailwindCSS v4](https://img.shields.io/badge/TailwindCSS-v4.0-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?logo=vite)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
-[![Grok API](https://img.shields.io/badge/AI Engine-xAI Grok--2-black)](https://console.xai.com/)
+[![Groq API](https://img.shields.io/badge/AI_Engine-Groq_/_xAI_Grok-orange)](https://console.groq.com/)
 
-Swasth+ is an open-source, AI-augmented healthcare platform designed to simplify patient care and streamline doctor workflows. By combining an autonomous **Grok (xAI)** health assistant with a dual-sided clinical dashboard, Swasth+ turns fragmented patient histories and diagnostic reports into actionable, doctor-authorized clinical briefs before appointments even begin.
-
----
-
-## The Problem & Why We Built Swasth
-
-In standard outpatient consultations, doctors often spend **4 out of 10 minutes** flipping through paper reports, re-asking historical medical questions, or trying to decipher past prescriptions. Meanwhile, patients forget critical symptom timelines or feel unprepared during their visits.
-
-**Swasth+ solves this by:**
-1. **Giving patients an intelligent companion** that analyzes medical reports (PDFs, images), provides home-care guidance, and tracks health milestones.
-2. **Pre-packaging patient context** into a doctor-ready briefing that the patient explicitly authorizes before stepping into the clinic.
-3. **Enforcing strict privacy** using Supabase Row Level Security (RLS) so patients always own and control access to their health records.
+Swasth+ is a next-generation, AI-augmented healthcare ecosystem designed to streamline patient triaging and clinician workflows. It features a dual-sided clinical dashboard, an autonomous AI medical assistant, a chronological health timeline, and a custom **Real-World Resilience Layer** that keeps the application fully functional even during complete network outages, database crashes, or AI cluster failures.
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture & Resilience Flow
 
 ```mermaid
-flowchart TD
-    subgraph Patient Portal
-        P[Patient Browser] -->|Upload Reports / Chat| AI[Patient AI Assistant]
-        P -->|Authorize Context| CB[Consultation Briefs]
+flowchart TB
+    subgraph Client Application [Swasth+ Browser App]
+        UI[React 19 UI Components] -->|API & Storage Queries| Client[Supabase Client]
+        Client -->|Network Fetch Call| Interceptor{Resilient Fetch Interceptor}
+        
+        %% Normal online route
+        Interceptor -->|Online & Connected| DBServer[(Supabase Cloud Server)]
+        DBServer -->|Update Local Copy| Cache[(LocalStorage GET Cache)]
+        
+        %% Offline / Failure fallback route
+        Interceptor -->|Offline or Simulated Outage| Failover[Resilience Engine]
+        Failover -->|GET Request| Cache
+        Failover -->|POST/PATCH/DELETE| SyncQueue[(Offline Sync Queue)]
+        
+        %% Storage Fallback
+        UI -->|Upload Document| StorageCheck{Network Connection?}
+        StorageCheck -->|Failed| Base64Cache[Convert File to Base64 Data URL]
+        Base64Cache -->|Save to local records| Cache
+        Base64Cache -->|Queue file upload| SyncQueue
+    end
+    
+    subgraph Background Sync Worker [Auto-Sync Engine]
+        SyncQueue -->|Periodic sync check - 6s| SyncWorker{Connection Restored?}
+        SyncWorker -->|Yes| DBServer
+        SyncWorker -->|No| SyncQueue
     end
 
-    subgraph Grok xAI Engine
-        AI -->|POST /v1/chat/completions| GROK[Grok-2-Latest]
-        GROK -->|Tool Call Execution| TC{Function Tools}
-        TC -->|suggest_home_remedies| AI
-        TC -->|search_patient_history| DB
-        TC -->|prepare_doctor_context| CB
-        TC -->|book_appointment| APPT[Appointments Table]
+    subgraph Intelligent Triage [AI Assistant Fallback]
+        Chat[Patient AI Assistant] -->|Triage Inquiry| AICheck{AI Cluster Active?}
+        AICheck -->|Yes| GroqAPI[Groq API / xAI Grok]
+        AICheck -->|No or Rate-limited| RuleEngine[Local Rule-Based Diagnosis Engine]
+        RuleEngine -->|Serve Lite Advisory| Chat
     end
-
-    subgraph Supabase Backend
-        DB[(PostgreSQL + RLS)]
-        STORAGE[Storage Bucket: medical-records]
-    end
-
-    subgraph Doctor Portal
-        D[Doctor Browser] -->|View Authorized Briefs| CB
-        D -->|Manage Shift Sessions| SCHED[Doctor Sessions]
-        D -->|Upload Prescriptions| PENDING[Pending Approvals]
-    end
-
-    PENDING -->|Patient Review & Acceptance| DB
 ```
 
 ---
 
-## Core Features
+## 🌟 Core Features
 
-### 🩺 1. Autonomous Grok AI Companion & Multimodal Vision
-- **Interactive Health Chat**: Answers patient queries with context drawn directly from their stored document index.
-- **Multimodal Report Analysis**: Parses uploaded medical images, blood reports, and PDFs using Grok's vision processing to extract relevant clinical insights.
-- **Live Tool Execution**: Grok autonomously triggers backend functions:
-  - `suggest_home_remedies` — Recommends safe care protocols for mild symptoms.
-  - `search_patient_history` — Queries past diagnostic uploads for matching keywords.
-  - `prepare_doctor_context` — Synthesizes complex patient histories into concise medical summaries.
-  - `find_best_doctor` — Matches symptoms against registered doctor specialties.
-  - `book_appointment` — Books consultation slots directly in the database.
+### 🛡️ 1. Real-World Resilience & Fault Tolerance
+*   **Zero-Outage Database Failover**: The app intercepts all Supabase calls. If the database crashes or goes offline, `GET` queries seamlessly fall back to a local storage cache, preventing white screens.
+*   **Offline Write Queuing**: Booking appointments, changing profiles, or adding medical records offline stores requests in an `Offline Sync Queue`.
+*   **Auto-Sync Engine**: A silent background sync worker runs every 6 seconds. When connectivity is restored, it replays queued actions to the server in chronological order.
+*   **Offline Document Uploads**: If a PDF or image report upload to Supabase storage fails, the app converts it into a local Base64 URL for immediate viewing in the UI and queues it for remote upload.
+*   **Degraded Mode Banners**: Displays a real-time status banner notifying the user that they are operating offline and that updates will auto-sync.
 
-### 📜 2. Patient-Authorized Clinical Briefings
-- Before an appointment, patients generate and review an AI-synthesized brief.
-- Patients select which doctor receives access. Doctors see only authorized briefs and explicitly attached files on their dashboard.
+### 🩺 2. Autonomous Dual AI Engine (Groq / Grok)
+*   **Interactive Consultation Assistant**: Resolves queries using context from the patient's medical history index.
+*   **Vision-Powered Medical Analysis**: Parses diagnostic images, lab reports, and prescriptions directly using vision models to extract summaries.
+*   **Autonomous Tool Calls**: The agent executes functions dynamically on the client side:
+    *   `suggest_home_remedies` — Provides home-care protocols for mild symptoms.
+    *   `search_patient_history` — Queries past diagnostic files for symptoms.
+    *   `find_best_doctor` — Matches symptoms against registered medical practitioners.
+    *   `book_appointment` — Automates scheduling slots.
+*   **Local Triage Fallback**: If the AI API rate-limits or fails, a client-side backup diagnostic engine parses symptom keywords (fever, cough, chest pain, stomach ache) to provide immediate advice.
 
-### 🔄 3. Doctor-to-Patient Record Staging
-- Doctors can upload prescriptions or lab requests directly to a patient's profile.
-- Files land in a `pending_document_uploads` state, giving patients full control to accept or reject incoming files.
-
-### 📅 4. Doctor Shift & Schedule Manager
-- Doctors create available consultation blocks with custom time slots and max patient limits.
-- Patients view available shifts in real time and request appointments without back-and-forth messaging.
-
-### ⏱️ 5. Chronological Health Timeline
-- Automatically logs milestones: completed appointments, AI home remedy consultations, diagnostic report uploads, and doctor-approved prescriptions.
+### 👥 3. Practitioner Shift Scheduler & Clinical Dashboards
+*   **Shift Manager**: Doctors define active consultation blocks, custom slots, and patient quotas.
+*   **Authorized Medical Briefs**: Patients explicitly review and authorize a synthesized AI consultation brief before it is shared. Doctors see only authorized briefs and records.
+*   **Record Staging**: Doctors upload staging prescriptions or reports directly to a patient's account, which the patient can review, accept, or reject.
 
 ---
 
-## Router & Entrypoints Guide
+## 🎛️ The Resilience Control Panel (HUD)
+
+To demonstrate and evaluate the system's fault-tolerance, Swasth+ features a floating **Resilience Console HUD** (located in the bottom-right corner):
+*   **Health Monitors**: Green/Red indicator lights tracking Network, Database, and AI cluster connectivity.
+*   **Failure Toggles (Fault Injection)**:
+    *   *Simulate Offline Mode*: Puts the app in mock airplane mode (network requests blocked).
+    *   *Simulate DB Failure*: Simulates a database server crash (returns server 500 error).
+    *   *Simulate AI Outage*: Blocks remote Groq/Grok calls to trigger local triage logic.
+*   **Sync Queue Monitor**: Displays queued write actions and supports manual synchronization or clearing.
+*   **Live Logs**: Real-time ticker showing intercepted requests and recovery actions taken.
+
+---
+
+## 🛣️ Router & Entrypoints Guide
 
 | Route | Component | Access Role | Function |
 | :--- | :--- | :--- | :--- |
-| `/` | `modules/patient/Home.tsx` | Public | Platform overview, features, and patient quick access |
-| `/doctors` | `modules/doctor/DoctorLanding.tsx` | Public | Practitioner network page & doctor onboarding info |
-| `/login` | `modules/shared/Login.tsx` | Public | Unified sign-in and account creation |
-| `/patient-dashboard` | `modules/patient/PatientDashboard.tsx` | Patient | AI health assistant, document uploads, and health timeline |
-| `/patient-doctors` | `modules/patient/Doctors.tsx` | Patient | Search doctors by specialty & view available slots |
-| `/patient-appointments`| `modules/patient/Appointments.tsx` | Patient | View scheduled consultations & status updates |
-| `/patient-messages` | `modules/patient/Messages.tsx` | Patient | Communication hub & system alerts |
-| `/patient-settings` | `modules/patient/Settings.tsx` | Patient | Update personal details & medical history profile |
-| `/doctor-dashboard` | `modules/doctor/DoctorDashboard.tsx` | Doctor | Clinical overview, authorized briefs, and patient list |
-| `/doctor-schedule` | `modules/doctor/Schedule.tsx` | Doctor | Create consultation slots & set patient quotas |
-| `/doctor-patients` | `modules/doctor/Patients.tsx` | Doctor | Access authorized patient files and histories |
-| `/doctor-settings` | `modules/doctor/Settings.tsx` | Doctor | Update specialty info, qualifications, and profile |
-| `/document/:id` | `modules/shared/DocumentView.tsx` | Authenticated | View lab reports, diagnostic images, or PDFs |
+| `/` | `src/modules/patient/Home.tsx` | Public | Homepage, features overview, and portal links |
+| `/login` | `src/modules/shared/Login.tsx` | Public | Unified sign-in and patient/doctor account creation |
+| `/patient-dashboard` | `src/modules/patient/PatientDashboard.tsx` | Patient | AI health assistant, record uploads, and health timeline |
+| `/patient-records` | `src/modules/patient/MedicalRecords.tsx` | Patient | Medical folder structures, uploads, and search |
+| `/patient-medications` | `src/modules/patient/Medications.tsx` | Patient | Dosage logging, timetables, and notification prompts |
+| `/patient-doctors` | `src/modules/patient/Doctors.tsx` | Patient | Practitioner search by specialty and booking slots |
+| `/patient-appointments` | `src/modules/patient/Appointments.tsx` | Patient | View scheduled consults and pending requests |
+| `/patient-messages` | `src/modules/patient/Messages.tsx` | Patient | Notification alerts and system messages |
+| `/patient-settings` | `src/modules/patient/Settings.tsx` | Patient | Medical profile setup and password management |
+| `/doctor-schedule` | `src/modules/doctor/Schedule.tsx` | Doctor | Schedule shift quotas, consultation timings, and slots |
+| `/doctor-appointments` | `src/modules/doctor/Appointments.tsx` | Doctor | Appointment approval dashboard |
+| `/doctor-patients` | `src/modules/doctor/Patients.tsx` | Doctor | Client records overview, doctor uploads, and patient timeline |
+| `/doctor-settings` | `src/modules/doctor/Settings.tsx` | Doctor | Specialization details and qualifications setup |
+| `/document/:id` | `src/modules/shared/DocumentView.tsx` | Authenticated | High-fidelity medical report and image viewer |
 
 ---
 
-## Database & Security Architecture
+## 🛠️ Installation & Local Setup Guide
 
-Swasth+ uses **Supabase PostgreSQL** with strict Row Level Security (RLS) to ensure data isolation between patients and doctors.
+Follow these steps to run Swasth+ locally:
 
-### Tables Breakdown
+### 1. Prerequisites
+Ensure you have the following installed:
+*   **Node.js**: v18.0 or higher (v24.x recommended)
+*   **Package Manager**: `pnpm` (Mandatory as per repository guidelines)
+*   **Supabase Account**: (Or use the active pre-configured environment variables below)
 
-- **`users`**: Extends `auth.users` with user roles (`patient` or `doctor`), names, and medical specialties.
-- **`documents`**: Stores uploaded medical records with extracted text, file URLs, and owner IDs.
-- **`consultation_briefs`**: AI-generated briefs authorized by patients for specific doctors.
-- **`appointments`**: Manages booking states (`pending`, `confirmed`, `rejected`), dates, times, and remarks.
-- **`health_milestones`**: Records chronological health actions (AI bookings, report uploads, consultations).
-- **`pending_document_uploads`**: Holds doctor-uploaded files until accepted by the target patient.
-- **`ai_chat_sessions` & `ai_chat_messages`**: Persists AI conversation history and tool execution logs per patient.
-- **`doctor_sessions`**: Defines doctor shift schedules and max patient capacities.
-
-All tables are secured via RLS policies defined in [`database.sql`](database.sql).
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **Node.js**: v18.0 or higher
-- **Package Manager**: `pnpm` (recommended) or `npm`
-- **Supabase Account**: A free Supabase project instance
-- **xAI Grok API Key**: Obtained from the [xAI Developer Console](https://console.xai.com/)
-
-### Step 1: Clone the Repository
-
+### 2. Clone the Repository
 ```bash
 git clone https://github.com/EliteDebuggers/Swasth.git
 cd Swasth
 ```
 
-### Step 2: Install Dependencies
-
+### 3. Install Project Dependencies
 ```bash
 pnpm install
 ```
 
-### Step 3: Configure Environment Variables
-
-Create a `.env` file in the root directory:
-
+### 4. Setup Environment Variables
+Create a `.env.local` file in the root of your project:
 ```env
-# Grok (xAI) API Key & Model Configuration
-VITE_GROK_API_KEY=xai-YOUR_GROK_API_KEY
-VITE_GROK_MODEL=grok-2-latest
+# Supabase Configuration
+VITE_SUPABASE_URL="https://xfxenzenwatgejotlmvd.supabase.co"
+VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmeGVuemVud2F0Z2Vqb3RsbXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNDc1MjUsImV4cCI6MjEwMDgyMzUyNX0.hQ5P01sNX3bq3bRmAzq3rhXOrWa4YSuL5dqivBHtgHI"
 
-# Supabase Project Credentials
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+# AI Model Configuration (Groq API Endpoint)
+VITE_GROQ_API_KEY="gsk_YOUR_API_KEY_HERE"
+VITE_GROK_MODEL="llama-3.1-8b-instant"
 ```
 
-### Step 4: Setup Supabase Database
+### 5. Run the Database Schema (If creating a new Supabase Instance)
+If you'd like to use a fresh database instance instead of the preconfigured dev DB:
+1. Open the **SQL Editor** on your Supabase dashboard.
+2. Paste and run the contents of [`database.sql`](database.sql). This configures the 9 tables, storage buckets (`medical-records` & `documents`), and security RLS rules.
 
-1. Open your project on the [Supabase Dashboard](https://supabase.com/dashboard).
-2. Go to the **SQL Editor**.
-3. Copy the entire contents of [`database.sql`](database.sql) into the editor and click **Run**.
-4. This will set up all 9 tables, indexes, storage buckets (`medical-records`), and RLS policies.
-
-### Step 5: Start the Development Server
-
+### 6. Start the Development Server
 ```bash
 pnpm dev
 ```
-
 Open `http://localhost:5173` in your browser.
 
-### Step 6: Build for Production
-
+### 7. Compile the Production Build
+To build and preview the optimized build locally:
 ```bash
-pnpm build
-pnpm preview
+pnpm run build
+pnpm run preview
 ```
 
 ---
 
-## Technical Deep-Dive: Grok Tool Integration
+## 🔐 Database & Security Architecture (PostgreSQL + RLS)
 
-The AI engine in [`src/modules/patient/components/PatientAIAssistant.tsx`](src/modules/patient/components/PatientAIAssistant.tsx) connects directly to Grok via the standard OpenAI-compatible completions API:
-
-```ts
-const res = await fetch('https://api.xai.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
-  },
-  body: JSON.stringify({
-    model: 'grok-2-latest',
-    messages: formattedMessages,
-    tools: toolDeclarations,
-    temperature: 0.3
-  })
-});
-```
-
-When Grok responds with `tool_calls`, the client parses arguments, executes the corresponding Supabase query or state update, appends the `tool` role message to the prompt, and requests the next turn from Grok. This pattern enables multi-step agentic behavior entirely within the client application.
+Data privacy is built into the core database layer using **Supabase Row Level Security (RLS)**:
+*   **`users`**: Extends authenticated users with roles (`patient` | `doctor`).
+*   **`documents`**: Stores files and OCR/extracted text. Patients can read their own documents. Doctors can only read a patient's document if it has been attached to an authorized brief.
+*   **`consultation_briefs`**: Contains patient summaries. Doctors have read access only if the patient has authorized them as the recipient.
+*   **`pending_document_uploads`**: Temporary holding table for doctor-assigned reports until the patient approves the insert.
 
 ---
 
-## FAQ & Troubleshooting
-
-<details>
-<summary><b>1. What happens if VITE_GROK_API_KEY is not set?</b></summary>
-The UI will alert the user to set `VITE_GROK_API_KEY` in their `.env` file. Non-AI features (document uploads, manual appointment booking, schedule management) will continue to work normally.
-</details>
-
-<details>
-<summary><b>2. How does document OCR / text extraction work?</b></summary>
-When a user attaches an image file, it is sent to Grok as a base64 Data URL (`image_url` object) in the messages array. Grok performs vision analysis directly on the image content.
-</details>
-
-<details>
-<summary><b>3. Why are doctors unable to see a patient's documents initially?</b></summary>
-By design, all documents are protected by Supabase RLS. Doctors can only view documents attached to an authorized `consultation_brief` or uploaded directly by that doctor.
-</details>
-
----
-
-## Team & License
+## 👥 Team & License
 
 Built with ❤️ by **Team EliteDebuggers**.
 
