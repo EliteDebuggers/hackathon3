@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Upload, FileText, Activity, Stethoscope, Clock, FilePlus, Calendar } from 'lucide-react';
-import DocumentViewerModal from '../../components/DocumentViewerModal';
+import { Icon } from '@iconify/react';
+
 import PatientAIAssistant from './components/PatientAIAssistant';
 import HealthTimeline from './components/HealthTimeline';
 import AppointmentBookingModal from './components/AppointmentBookingModal';
@@ -22,9 +22,7 @@ export default function PatientDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [userId, setUserId] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{ title: string, file_url: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadCategory, setUploadCategory] = useState('Lab Report');
   const [chatbotWidth, setChatbotWidth] = useState(400);
@@ -139,8 +137,7 @@ export default function PatientDashboard() {
   };
 
   const openDocument = (doc: Document) => {
-    setSelectedDoc({ title: doc.title, file_url: doc.file_url });
-    setViewerOpen(true);
+    navigate(`/document/${doc.id}`);
   };
 
   const totalDocs = documents.length;
@@ -155,9 +152,9 @@ export default function PatientDashboard() {
         <div className={`flex-1 flex flex-col gap-4 w-full transition-all duration-300 ease-in-out p-3 md:p-4 ${isChatbotOpen ? 'lg:pr-4 mb-4 lg:mb-0' : ''}`}>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-md shadow-sm border p-4 flex items-center">
+            <div className="bg-white rounded-xl shadow-md p-5 flex items-center transition-all hover:shadow-lg">
               <div className="p-3 bg-blue-100 text-blue-600 rounded-md mr-4">
-                <FileText className="w-6 h-6" />
+                <Icon icon="solar:file-text-linear" className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Total Records</p>
@@ -165,9 +162,9 @@ export default function PatientDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-md shadow-sm border p-4 flex items-center">
+            <div className="bg-white rounded-xl shadow-md p-5 flex items-center transition-all hover:shadow-lg">
               <div className="p-3 bg-green-100 text-green-600 rounded-md mr-4">
-                <Stethoscope className="w-6 h-6" />
+                <Icon icon="solar:stethoscope-linear" className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Doctor Notes</p>
@@ -175,9 +172,9 @@ export default function PatientDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-md shadow-sm border p-4 flex items-center">
+            <div className="bg-white rounded-xl shadow-md p-5 flex items-center transition-all hover:shadow-lg">
               <div className="p-3 bg-purple-100 text-purple-600 rounded-md mr-4">
-                <FilePlus className="w-6 h-6" />
+                <Icon icon="solar:file-download-linear" className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Your Uploads</p>
@@ -185,9 +182,9 @@ export default function PatientDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-md shadow-sm border p-4 flex items-center">
+            <div className="bg-white rounded-xl shadow-md p-5 flex items-center transition-all hover:shadow-lg">
               <div className="p-3 bg-orange-100 text-orange-600 rounded-md mr-4">
-                <Clock className="w-6 h-6" />
+                <Icon icon="solar:clock-circle-linear" className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Last Activity</p>
@@ -201,22 +198,22 @@ export default function PatientDashboard() {
               onClick={() => setBookingModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md font-medium flex items-center shadow-sm transition"
             >
-              <Calendar className="w-5 h-5 mr-2" />
+              <Icon icon="solar:calendar-linear" className="w-5 h-5 mr-2" />
               Book Appointment
             </button>
           </div>
 
           <HealthTimeline patientId={userId} />
 
-          <div className="bg-white rounded-md shadow-sm border overflow-hidden">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center p-4 border-b bg-gray-50/50 gap-4">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center p-5 bg-gray-50/30 gap-4">
               <h2 className="text-xl font-semibold text-gray-800">Your Medical History</h2>
 
               <div className="flex items-center gap-3">
                 <select
                   value={uploadCategory}
                   onChange={e => setUploadCategory(e.target.value)}
-                  className="border-gray-300 border rounded-md px-3 py-2 text-sm bg-white text-gray-700 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="border-gray-200 border rounded-lg px-4 py-2 text-sm bg-white text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                   disabled={uploading}
                 >
                   <option value="Lab Report">Lab Report</option>
@@ -238,7 +235,7 @@ export default function PatientDashboard() {
                     className={`cursor-pointer text-white px-4 py-2 rounded-md font-medium flex items-center transition shadow-sm ${uploading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                   >
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Icon icon="solar:upload-minimalistic-linear" className="w-4 h-4 mr-2" />
                     {uploading ? 'Uploading...' : 'Upload Record'}
                   </label>
                 </div>
@@ -248,22 +245,22 @@ export default function PatientDashboard() {
             <div className="p-4">
               {loading ? (
                 <div className="flex justify-center items-center py-12 text-blue-600">
-                  <Activity className="w-8 h-8 animate-spin" />
+                  <Icon icon="solar:pulse-linear" className="w-8 h-8 animate-spin" />
                 </div>
               ) : documents.length === 0 ? (
                 <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-md bg-gray-50">
-                  <FilePlus className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <Icon icon="solar:file-download-linear" className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">No medical records yet</h3>
                   <p>Upload your first lab report or scan to get started.</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
                   {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md hover:bg-blue-50/50 hover:border-blue-200 transition group">
+                    <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-blue-50/50 hover:shadow-md transition-all group">
                       <div className="flex items-center">
                         <div className={`p-3 rounded-md mr-4 ${doc.document_type === 'Doctor Prescription/Note' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                           }`}>
-                          <FileText className="w-6 h-6" />
+                          <Icon icon="solar:file-text-linear" className="w-6 h-6" />
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 group-hover:text-blue-700 transition">{doc.title}</p>
@@ -278,7 +275,7 @@ export default function PatientDashboard() {
                       </div>
                       <button
                         onClick={() => openDocument(doc)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-semibold bg-white border border-blue-200 hover:border-blue-300 px-4 py-2 rounded-md transition shadow-sm"
+                        className="text-blue-600 hover:text-white font-semibold bg-blue-50 hover:bg-blue-600 px-5 py-2 rounded-lg transition-all shadow-sm"
                       >
                         View
                       </button>
@@ -307,11 +304,7 @@ export default function PatientDashboard() {
           </div>
         </div>
       </div>
-      <DocumentViewerModal
-        isOpen={viewerOpen}
-        onClose={() => setViewerOpen(false)}
-        document={selectedDoc}
-      />
+
       <AppointmentBookingModal
         isOpen={bookingModalOpen}
         onClose={() => setBookingModalOpen(false)}

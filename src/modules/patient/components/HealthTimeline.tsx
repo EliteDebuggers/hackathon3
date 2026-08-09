@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Calendar, FileText, CheckCircle, Clock, Activity } from 'lucide-react';
+import { Icon } from '@iconify/react';
 import PendingApprovalsModal from './PendingApprovalsModal';
 
 interface Milestone {
@@ -46,19 +46,19 @@ export default function HealthTimeline({ patientId }: { patientId: string }) {
   };
 
   const getIcon = (type: string, status: string) => {
-    if (status === 'completed') return <CheckCircle className="w-6 h-6 text-green-500 bg-white" />;
+    if (status === 'completed') return <Icon icon="solar:check-circle-linear" className="w-6 h-6 text-green-500 bg-white" />;
     switch (type) {
-      case 'appointment_booked': return <Calendar className="w-6 h-6 text-blue-500 bg-white" />;
-      case 'action_required': return <Clock className="w-6 h-6 text-orange-500 bg-white" />;
-      case 'doctor_note': return <FileText className="w-6 h-6 text-purple-500 bg-white" />;
-      default: return <Activity className="w-6 h-6 text-gray-400 bg-white" />;
+      case 'appointment_booked': return <Icon icon="solar:calendar-linear" className="w-6 h-6 text-blue-500 bg-white" />;
+      case 'action_required': return <Icon icon="solar:clock-circle-linear" className="w-6 h-6 text-orange-500 bg-white" />;
+      case 'doctor_note': return <Icon icon="solar:file-text-linear" className="w-6 h-6 text-purple-500 bg-white" />;
+      default: return <Icon icon="solar:pulse-linear" className="w-6 h-6 text-gray-400 bg-white" />;
     }
   };
 
   return (
     <div className="bg-white rounded-md shadow-sm border p-6">
       <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-        <Activity className="w-6 h-6 mr-2 text-indigo-600" />
+        <Icon icon="solar:pulse-linear" className="w-6 h-6 mr-2 text-indigo-600" />
         Your Health Journey
       </h2>
 

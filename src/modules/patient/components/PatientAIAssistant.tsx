@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Sparkles, Bot, Send, CheckCircle, Clock, FileText } from 'lucide-react';
+import { Icon } from '@iconify/react';
 import { GoogleGenAI, Type } from '@google/genai';
 
 interface Document {
@@ -250,7 +250,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
     <div className="bg-white overflow-hidden flex flex-col h-full">
       <div className="p-3 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center">
         <h2 className="font-semibold flex items-center">
-          <Sparkles className="w-5 h-5 mr-2" />
+          <Icon icon="solar:stars-linear" className="w-5 h-5 mr-2" />
           AI Appointment Coordinator
         </h2>
       </div>
@@ -262,8 +262,8 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
               msg.role === 'system' ? 'bg-indigo-50 border border-indigo-100 text-indigo-800 text-sm' :
                 'bg-white border text-gray-800 shadow-sm'
               }`}>
-              {msg.role === 'model' && <Bot className="w-5 h-5 mt-0.5 text-blue-600 flex-shrink-0" />}
-              {msg.role === 'system' && <Clock className="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0" />}
+              {msg.role === 'model' && <Icon icon="solar:smart-speaker-linear" className="w-5 h-5 mt-0.5 text-blue-600 flex-shrink-0" />}
+              {msg.role === 'system' && <Icon icon="solar:clock-circle-linear" className="w-4 h-4 mt-0.5 text-indigo-500 flex-shrink-0" />}
               <div>
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
@@ -273,7 +273,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
         {loading && (
           <div className="flex justify-start">
             <div className="bg-white border rounded-md p-3 shadow-sm flex items-center gap-2">
-              <Bot className="w-5 h-5 text-gray-400 animate-pulse" />
+              <Icon icon="solar:smart-speaker-linear" className="w-5 h-5 text-gray-400 animate-pulse" />
               <span className="text-gray-500 text-sm animate-pulse">Agent is thinking...</span>
             </div>
           </div>
@@ -285,7 +285,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
         <div className="p-3 bg-blue-50 border-t border-blue-100 animate-fade-in">
           <div className="bg-white p-3 rounded-md shadow-sm border border-blue-200 mb-3">
             <h3 className="font-semibold text-blue-900 flex items-center mb-2">
-              <FileText className="w-4 h-4 mr-2" />
+              <Icon icon="solar:file-text-linear" className="w-4 h-4 mr-2" />
               Consultation Brief
             </h3>
             <p className="text-sm text-gray-700 whitespace-pre-wrap mb-4">{generatedBrief}</p>
@@ -306,7 +306,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
                 disabled={!selectedDoctor || loading}
                 className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 rounded-md flex items-center justify-center transition"
               >
-                <CheckCircle className="w-4 h-4 mr-2" />
+                <Icon icon="solar:check-circle-linear" className="w-4 h-4 mr-2" />
                 Authorize & Share
               </button>
             </div>
@@ -330,7 +330,7 @@ export default function PatientAIAssistant({ patientId, documents }: { patientId
             disabled={loading || !input.trim()}
             className="absolute right-2 top-1.5 p-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            <Send className="w-4 h-4 m-0.5" />
+            <Icon icon="solar:plain-2-linear" className="w-4 h-4 m-0.5" />
           </button>
         </div>
       </div>

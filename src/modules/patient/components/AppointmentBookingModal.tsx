@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { X, Calendar, Clock, User, FileText, CheckCircle } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 interface Doctor {
   id: string;
@@ -76,11 +76,11 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
       <div className="bg-white rounded-md shadow-xl w-full max-w-lg overflow-hidden animate-fade-in">
         <div className="flex justify-between items-center p-6 border-b bg-gray-50/50">
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
-            <Calendar className="w-6 h-6 mr-2 text-blue-600" />
+            <Icon icon="solar:calendar-linear" className="w-6 h-6 mr-2 text-blue-600" />
             Book Appointment
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
-            <X className="w-6 h-6" />
+            <Icon icon="solar:close-circle-linear" className="w-6 h-6" />
           </button>
         </div>
 
@@ -88,7 +88,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Select Doctor</label>
             <div className="relative">
-              <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <Icon icon="solar:user-linear" className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <select
                 value={selectedDoctor}
                 onChange={e => setSelectedDoctor(e.target.value)}
@@ -106,7 +106,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
+                <Icon icon="solar:calendar-linear" className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
                 <input
                   type="date"
                   value={date}
@@ -118,7 +118,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
               <div className="relative">
-                <Clock className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
+                <Icon icon="solar:clock-circle-linear" className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
                 <input
                   type="time"
                   value={time}
@@ -132,7 +132,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Remarks for Doctor</label>
             <div className="relative">
-              <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <Icon icon="solar:file-text-linear" className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <textarea
                 value={remarks}
                 onChange={e => setRemarks(e.target.value)}
@@ -158,7 +158,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, patientId, on
           >
             {loading ? 'Booking...' : (
               <>
-                <CheckCircle className="w-5 h-5 mr-2" />
+                <Icon icon="solar:check-circle-linear" className="w-5 h-5 mr-2" />
                 Confirm Appointment
               </>
             )}

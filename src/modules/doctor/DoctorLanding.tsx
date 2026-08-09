@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { Activity, Stethoscope, Search, FileSignature, ArrowRight, User } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 export default function DoctorLanding() {
   const navigate = useNavigate();
@@ -9,12 +9,12 @@ export default function DoctorLanding() {
       {/* Navbar (Dark Theme for Docs) */}
       <nav className="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition">
-          <Activity className="w-8 h-8 text-blue-500" />
+          <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-500" />
           <span className="text-xl font-bold text-white tracking-tight">HealthSync</span>
         </Link>
         <div className="flex items-center gap-6">
           <Link to="/" className="hidden md:flex items-center text-sm font-medium text-slate-400 hover:text-white transition">
-            <User className="w-4 h-4 mr-1.5" />
+            <Icon icon="solar:user-linear" className="w-4 h-4 mr-1.5" />
             For Patients
           </Link>
           <div className="h-4 w-px bg-slate-700 hidden md:block"></div>
@@ -39,7 +39,7 @@ export default function DoctorLanding() {
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-blue-400 text-sm font-medium mb-8">
-            <Stethoscope className="w-4 h-4 mr-2" />
+            <Icon icon="solar:stethoscope-linear" className="w-4 h-4 mr-2" />
             The Provider Network
           </div>
           <h1 className="text-5xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight mb-8">
@@ -57,7 +57,7 @@ export default function DoctorLanding() {
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white text-lg font-medium px-8 py-4 rounded-full transition shadow-lg shadow-blue-900/50 flex items-center justify-center"
             >
               Join the Network
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <Icon icon="solar:arrow-right-linear" className="w-5 h-5 ml-2" />
             </button>
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function DoctorLanding() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
               <div className="w-14 h-14 bg-blue-900/50 text-blue-400 rounded-md flex items-center justify-center mb-6">
-                <Search className="w-7 h-7" />
+                <Icon icon="solar:magnifier-linear" className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Instant Patient Context</h3>
               <p className="text-slate-400 leading-relaxed">
@@ -79,7 +79,7 @@ export default function DoctorLanding() {
 
             <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
               <div className="w-14 h-14 bg-indigo-900/50 text-indigo-400 rounded-md flex items-center justify-center mb-6">
-                <FileSignature className="w-7 h-7" />
+                <Icon icon="solar:file-check-linear" className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Direct Prescriptions</h3>
               <p className="text-slate-400 leading-relaxed">
@@ -89,7 +89,7 @@ export default function DoctorLanding() {
 
             <div className="bg-slate-800 p-8 rounded-md border border-slate-700 hover:border-slate-600 transition">
               <div className="w-14 h-14 bg-emerald-900/50 text-emerald-400 rounded-md flex items-center justify-center mb-6">
-                <Activity className="w-7 h-7" />
+                <Icon icon="solar:pulse-linear" className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Global Dashboard</h3>
               <p className="text-slate-400 leading-relaxed">
@@ -104,7 +104,7 @@ export default function DoctorLanding() {
       <footer className="bg-slate-900 py-12 px-6 mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-white">
-            <Activity className="w-6 h-6 text-blue-500" />
+            <Icon icon="solar:pulse-linear" className="w-6 h-6 text-blue-500" />
             <span className="text-lg font-bold">HealthSync Providers</span>
           </div>
           <p className="text-slate-500 text-sm">

@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { Activity, ShieldCheck, FileUp, Share2, ChevronRight, Stethoscope } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -9,12 +9,12 @@ export default function Home() {
       {/* Navbar */}
       <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Activity className="w-8 h-8 text-blue-600" />
+          <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
           <span className="text-xl font-bold text-gray-900 tracking-tight">HealthSync</span>
         </div>
         <div className="flex items-center gap-6">
           <Link to="/doctors" className="hidden md:flex items-center text-sm font-medium text-gray-600 hover:text-blue-600 transition">
-            <Stethoscope className="w-4 h-4 mr-1.5" />
+            <Icon icon="solar:stethoscope-linear" className="w-4 h-4 mr-1.5" />
             For Doctors
           </Link>
           <div className="h-4 w-px bg-gray-200 hidden md:block"></div>
@@ -41,7 +41,7 @@ export default function Home() {
         
         <div className="max-w-5xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-medium mb-6">
-            <ShieldCheck className="w-4 h-4 mr-2" />
+            <Icon icon="solar:shield-check-linear" className="w-4 h-4 mr-2" />
             Your Health Data, Secured.
           </div>
           <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 tracking-tight leading-tight mb-8">
@@ -59,7 +59,7 @@ export default function Home() {
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-lg font-medium px-8 py-4 rounded-full transition shadow-lg shadow-blue-600/20 flex items-center justify-center"
             >
               Create Free Account
-              <ChevronRight className="w-5 h-5 ml-2" />
+              <Icon icon="solar:alt-arrow-right-linear" className="w-5 h-5 ml-2" />
             </button>
             <Link 
               to="/doctors"
@@ -82,7 +82,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-12">
             <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
               <div className="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-md flex items-center justify-center mb-6 transform -rotate-3">
-                <ShieldCheck className="w-8 h-8" />
+                <Icon icon="solar:shield-check-linear" className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">1. Sign Up Securely</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -92,7 +92,7 @@ export default function Home() {
 
             <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
               <div className="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-md flex items-center justify-center mb-6 transform rotate-3">
-                <FileUp className="w-8 h-8" />
+                <Icon icon="solar:file-send-linear" className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">2. Digitize Your Records</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -102,7 +102,7 @@ export default function Home() {
 
             <div className="bg-white p-8 rounded-md shadow-sm border border-gray-100 text-center hover:shadow-md transition">
               <div className="w-16 h-16 mx-auto bg-purple-100 text-purple-600 rounded-md flex items-center justify-center mb-6 transform -rotate-3">
-                <Share2 className="w-8 h-8" />
+                <Icon icon="solar:share-linear" className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">3. Connect with Doctors</h3>
               <p className="text-gray-600 leading-relaxed">
@@ -117,7 +117,7 @@ export default function Home() {
       <footer className="bg-white border-t border-gray-100 py-12 px-6 mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-gray-900">
-            <Activity className="w-6 h-6 text-blue-600" />
+            <Icon icon="solar:pulse-linear" className="w-6 h-6 text-blue-600" />
             <span className="text-lg font-bold">HealthSync</span>
           </div>
           <p className="text-gray-500 text-sm">

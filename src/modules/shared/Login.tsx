@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { UserCircle, Stethoscope, ArrowLeft, Activity } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function Login() {
     <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
       <div className="p-6">
         <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition">
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <Icon icon="solar:arrow-left-linear" className="w-4 h-4 mr-2" />
           Back to Home
         </Link>
       </div>
@@ -73,7 +73,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-md shadow-xl border border-gray-100 p-8">
           <div className="flex items-center justify-center gap-2 mb-8">
-            <Activity className="w-8 h-8 text-blue-600" />
+            <Icon icon="solar:pulse-linear" className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">HealthSync</h1>
           </div>
 
@@ -106,7 +106,7 @@ export default function Login() {
                 onClick={() => setRole('patient')}
                 className={`flex flex-col items-center p-4 border rounded-md ${role === 'patient' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
               >
-                <UserCircle className={`w-8 h-8 mb-2 ${role === 'patient' ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Icon icon="solar:user-circle-linear" className={`w-8 h-8 mb-2 ${role === 'patient' ? 'text-blue-600' : 'text-gray-400'}`} />
                 <span className={`font-medium ${role === 'patient' ? 'text-blue-600' : 'text-gray-600'}`}>Patient</span>
               </button>
               <button
@@ -114,7 +114,7 @@ export default function Login() {
                 onClick={() => setRole('doctor')}
                 className={`flex flex-col items-center p-4 border rounded-md ${role === 'doctor' ? 'bg-blue-50 border-blue-600' : 'border-gray-200'}`}
               >
-                <Stethoscope className={`w-8 h-8 mb-2 ${role === 'doctor' ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Icon icon="solar:stethoscope-linear" className={`w-8 h-8 mb-2 ${role === 'doctor' ? 'text-blue-600' : 'text-gray-400'}`} />
                 <span className={`font-medium ${role === 'doctor' ? 'text-blue-600' : 'text-gray-600'}`}>Doctor</span>
               </button>
             </div>

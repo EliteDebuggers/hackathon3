@@ -11,6 +11,9 @@ importers:
       '@google/genai':
         specifier: ^2.16.0
         version: 2.16.0
+      '@iconify/react':
+        specifier: ^6.0.2
+        version: 6.0.2(react@19.2.8)
       '@supabase/supabase-js':
         specifier: ^2.112.2
         version: 2.112.2
@@ -71,6 +74,14 @@ packages:
     peerDependenciesMeta:
       '@modelcontextprotocol/sdk':
         optional: true
+
+  '@iconify/react@6.0.2':
+    resolution: {integrity: sha512-SMmC2sactfpJD427WJEDN6PMyznTFMhByK9yLW0gOTtnjzzbsi/Ke/XqsumsavFPwNiXs8jSiYeZTmLCLwO+Fg==}
+    peerDependencies:
+      react: '>=16'
+
+  '@iconify/types@2.0.0':
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -987,6 +998,13 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@iconify/react@6.0.2(react@19.2.8)':
+    dependencies:
+      '@iconify/types': 2.0.0
+      react: 19.2.8
+
+  '@iconify/types@2.0.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

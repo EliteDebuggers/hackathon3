@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { X, Check, FileText } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 interface PendingUpload {
   id: string;
@@ -83,7 +83,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
             Pending Approvals
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
-            <X className="w-6 h-6" />
+            <Icon icon="solar:close-circle-linear" className="w-6 h-6" />
           </button>
         </div>
 
@@ -99,7 +99,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-100 text-blue-600 rounded-md">
-                        <FileText className="w-5 h-5" />
+                        <Icon icon="solar:file-text-linear" className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900">{doc.title}</p>
@@ -124,7 +124,7 @@ export default function PendingApprovalsModal({ isOpen, onClose, patientId }: { 
                       onClick={() => handleApprove(doc)}
                       className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 flex items-center rounded-md transition"
                     >
-                      <Check className="w-4 h-4 mr-1" />
+                      <Icon icon="solar:check-read-linear" className="w-4 h-4 mr-1" />
                       Approve
                     </button>
                   </div>
