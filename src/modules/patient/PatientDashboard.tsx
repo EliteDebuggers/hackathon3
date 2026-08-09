@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LogOut, Upload, FileText, Activity, Stethoscope, Clock, FilePlus, Calendar } from 'lucide-react';
+import { Upload, FileText, Activity, Stethoscope, Clock, FilePlus, Calendar } from 'lucide-react';
 import DocumentViewerModal from '../../components/DocumentViewerModal';
 import PatientAIAssistant from './components/PatientAIAssistant';
 import HealthTimeline from './components/HealthTimeline';
 import AppointmentBookingModal from './components/AppointmentBookingModal';
+import SharedLayout from '../../components/SharedLayout';
 
 interface Document {
   id: string;
@@ -102,11 +103,6 @@ export default function PatientDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
-
   const openDocument = (doc: Document) => {
     setSelectedDoc({ title: doc.title, file_url: doc.file_url });
     setViewerOpen(true);
@@ -118,18 +114,8 @@ export default function PatientDashboard() {
   const lastUpload = documents.length > 0 ? new Date(documents[0].created_at).toLocaleDateString() : 'Never';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-900 flex items-center">
-          <Activity className="w-6 h-6 mr-2 text-blue-600" />
-          Patient Portal
-        </h1>
-        <button onClick={handleLogout} className="flex items-center text-gray-600 hover:text-red-600 font-medium transition">
-          <LogOut className="w-5 h-5 mr-2" /> Logout
-        </button>
-      </nav>
-
-      <main className="max-w-6xl w-full mx-auto p-6 mt-4 flex-1">
+    <SharedLayout role="patient">
+      <div className="w-full mx-auto p-6 mt-4 flex-1">
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border p-6 flex items-center">
@@ -273,8 +259,7 @@ export default function PatientDashboard() {
             <PatientAIAssistant patientId={userId} documents={documents} />
           </div>
         </div>
-      </main>
-
+      </div>
       <DocumentViewerModal
         isOpen={viewerOpen}
         onClose={() => setViewerOpen(false)}
@@ -285,6 +270,6 @@ export default function PatientDashboard() {
         onClose={() => setBookingModalOpen(false)}
         patientId={userId}
       />
-    </div>
+    </SharedLayout>
   );
 }

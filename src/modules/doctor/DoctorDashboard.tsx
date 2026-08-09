@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LogOut, Upload, FileText, Users, ChevronRight, User, Activity, FilePlus, Clock, LayoutDashboard } from 'lucide-react';
+import { Upload, FileText, LayoutDashboard, User, Users, Activity, ChevronRight, Clock, FilePlus } from 'lucide-react';
 import DocumentViewerModal from '../../components/DocumentViewerModal';
+import SharedLayout from '../../components/SharedLayout';
 
 interface Patient {
   id: string;
@@ -206,29 +207,14 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
-
   const openDocument = (doc: Document) => {
     setSelectedDoc({ title: doc.title, file_url: doc.file_url });
     setViewerOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-900 flex items-center">
-          <StethoscopeIcon className="w-6 h-6 mr-2 text-blue-600" />
-          Doctor Portal
-        </h1>
-        <button onClick={handleLogout} className="flex items-center text-gray-600 hover:text-red-600 font-medium transition">
-          <LogOut className="w-5 h-5 mr-2" /> Logout
-        </button>
-      </nav>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex gap-6">
+    <SharedLayout role="doctor">
+      <div className="flex-1 w-full mx-auto p-6 flex gap-6">
 
         {/* Sidebar */}
         <div className="w-1/3 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-[calc(100vh-8rem)] sticky top-24">
@@ -479,15 +465,13 @@ export default function DoctorDashboard() {
             </>
           )}
         </div>
-
-      </main>
-
+      </div>
       <DocumentViewerModal
         isOpen={viewerOpen}
         onClose={() => setViewerOpen(false)}
         document={selectedDoc}
       />
-    </div>
+    </SharedLayout>
   );
 }
 
@@ -512,25 +496,4 @@ function SparklesIcon(props: any) {
       <path d="M17 19h4" />
     </svg>
   );
-}
-
-function StethoscopeIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
-      <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
-      <circle cx="20" cy="10" r="2" />
-    </svg>
-  )
 }
