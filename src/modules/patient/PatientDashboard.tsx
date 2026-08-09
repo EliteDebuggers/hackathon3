@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { LogOut, Upload, FileText, Activity, Stethoscope, Clock, FilePlus } from 'lucide-react';
 import DocumentViewerModal from '../../components/DocumentViewerModal';
+import PatientAIAssistant from './components/PatientAIAssistant';
 
 interface Document {
   id: string;
@@ -168,9 +169,11 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* Main Records Area */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center p-6 border-b bg-gray-50/50 gap-4">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-2/3 flex flex-col gap-6">
+            {/* Main Records Area */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center p-6 border-b bg-gray-50/50 gap-4">
             <h2 className="text-xl font-semibold text-gray-800">Your Medical History</h2>
 
             <div className="flex items-center gap-3">
@@ -249,7 +252,12 @@ export default function PatientDashboard() {
             )}
           </div>
         </div>
-      </main>
+      </div>
+      <div className="lg:w-1/3">
+        <PatientAIAssistant patientId={userId} documents={documents} />
+      </div>
+    </div>
+  </main>
 
       <DocumentViewerModal
         isOpen={viewerOpen}

@@ -41,3 +41,22 @@ create policy "Users can insert documents" on public.documents for insert with c
 insert into storage.buckets (id, name, public) values ('medical-records', 'medical-records', true) on conflict do nothing;
 create policy "Anyone can read medical records" on storage.objects for select using (bucket_id = 'medical-records');
 create policy "Authenticated users can upload" on storage.objects for insert with check (bucket_id = 'medical-records' and auth.role() = 'authenticated');
+
+-- Create consultation_briefs table for AI summaries
+create table public.consultation_briefs (
+  id uuid default gen_random_uuid() primary key,
+  patient_id uuid references public.users(id),
+  authorized_doctor_id uuid references public.users(id),
+  appointment_context text, -- The AI summary
+  attached_document_ids uuid[], -- The specific docs the AI selected
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Enable RLS on consultation_briefs
+alter table public.consultation_briefs enable row level security;
+-- Patients can view their own briefs
+create policy "Patients can view own briefs" on public.consultation_briefs for select using (auth.uid() = patient_id);
+-- Doctors can view briefs authorized to them
+create policy "Doctors can view authorized briefs" on public.consultation_briefs for select using (auth.uid() = authorized_doctor_id);
+-- Patients can insert briefs
+create policy "Patients can insert briefs" on public.consultation_briefs for insert with check (auth.uid() = patient_id);

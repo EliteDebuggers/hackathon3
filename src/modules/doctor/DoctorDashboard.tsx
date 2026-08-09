@@ -20,6 +20,12 @@ interface Document {
   patient_id: string;
 }
 
+interface Brief {
+  id: string;
+  appointment_context: string;
+  created_at: string;
+}
+
 export default function DoctorDashboard() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -27,6 +33,7 @@ export default function DoctorDashboard() {
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
+  const [briefs, setBriefs] = useState<Brief[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -45,6 +52,7 @@ export default function DoctorDashboard() {
   useEffect(() => {
     if (selectedPatient) {
       fetchDocuments(selectedPatient);
+      fetchBriefs(selectedPatient);
     }
   }, [selectedPatient]);
 
@@ -89,6 +97,20 @@ export default function DoctorDashboard() {
 
     if (!error && data) {
       setDocuments(data);
+    }
+  };
+
+  const fetchBriefs = async (patientId: string) => {
+    if (!doctorId) return;
+    const { data } = await supabase
+      .from('consultation_briefs')
+      .select('*')
+      .eq('patient_id', patientId)
+      .eq('authorized_doctor_id', doctorId)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setBriefs(data);
     }
   };
 
@@ -350,6 +372,25 @@ export default function DoctorDashboard() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6">
+                  {briefs.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-indigo-900 mb-3 flex items-center">
+                        <SparklesIcon className="w-5 h-5 mr-2" />
+                        AI Patient Summaries
+                      </h3>
+                      <div className="grid gap-4">
+                        {briefs.map(brief => (
+                          <div key={brief.id} className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
+                            <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">
+                              Authorized Context • {new Date(brief.created_at).toLocaleDateString()}
+                            </div>
+                            <p className="text-sm text-indigo-900 whitespace-pre-wrap">{brief.appointment_context}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {documents.length === 0 ? (
                     <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                       <FileText className="w-12 h-12 mx-auto text-gray-300 mb-4" />
@@ -400,6 +441,29 @@ export default function DoctorDashboard() {
         document={selectedDoc}
       />
     </div>
+  );
+}
+
+function SparklesIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
+    </svg>
   );
 }
 
