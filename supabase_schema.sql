@@ -116,3 +116,42 @@ alter table public.pending_document_uploads enable row level security;
 create policy "Patients can view pending uploads" on public.pending_document_uploads for select using (auth.uid() = patient_id);
 create policy "Doctors can insert pending uploads" on public.pending_document_uploads for insert with check (auth.uid() = doctor_id);
 create policy "Patients can update pending uploads" on public.pending_document_uploads for update using (auth.uid() = patient_id);
+
+-- Added for Document Deletion Feature
+create policy "Users can delete own documents" on public.documents for delete using (auth.uid() = uploader_id);
+create policy "Users can delete own files" on storage.objects for delete using (bucket_id = 'medical-records' and auth.uid() = owner);
+
+-- AI Chat Sessions
+create table public.ai_chat_sessions (
+  id uuid default gen_random_uuid() primary key,
+  patient_id uuid references public.users(id) not null,
+  title text not null default 'New Chat',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ai_chat_sessions enable row level security;
+create policy "Patients can view own sessions" on public.ai_chat_sessions for select using (auth.uid() = patient_id);
+create policy "Patients can insert own sessions" on public.ai_chat_sessions for insert with check (auth.uid() = patient_id);
+create policy "Patients can delete own sessions" on public.ai_chat_sessions for delete using (auth.uid() = patient_id);
+
+-- AI Chat Messages
+create table public.ai_chat_messages (
+  id uuid default gen_random_uuid() primary key,
+  session_id uuid references public.ai_chat_sessions(id) on delete cascade not null,
+  role text not null,
+  content text not null,
+  is_tool_call boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.ai_chat_messages enable row level security;
+create policy "Patients can view own messages" on public.ai_chat_messages for select using (
+  exists (select 1 from public.ai_chat_sessions s where s.id = session_id and s.patient_id = auth.uid())
+);
+create policy "Patients can insert own messages" on public.ai_chat_messages for insert with check (
+  exists (select 1 from public.ai_chat_sessions s where s.id = session_id and s.patient_id = auth.uid())
+);
+
+-- Add extracted text to documents
+alter table public.documents add column if not exists extracted_text text;
+
